@@ -43,10 +43,80 @@
 <script lang="ts">
 /* eslint-disable */
 
-import { defineComponent } from 'vue';
+import { defineComponent, inject, Ref } from 'vue';
+
+import stationDataJSON from '@/data/stationList.json';
+
+import { TrainResponse, TrainInfo } from '@/interfaces/TrainAPI';
+import { TimetableResponse, TimetableInfo, TimetableStopInfo } from '@/interfaces/TimetableAPI';
 
 export default defineComponent({
-  data: () => ({}),
+  data: () => ({
+    currentStationName: '',
+    stationDataJSON,
+  }),
+
+  setup() {
+    const selectedStationName = inject('selectedStationName') as Ref<string>;
+
+    console.log(selectedStationName.value);
+
+    return {
+      selectedStationName,
+    };
+  },
+
+  async mounted() {
+    /*
+      0: "LCS Żywiec"
+      1: "https://td2.info.pl/scenerie/lcs-zywiec/"
+      2: "97, 139"
+      3: null
+      4: "10"
+      5: "NIE"
+      6: "współczesna"
+      7: "SCS"
+      8: "" - sbl
+      9: "" - blokady
+      10: 3
+      11: 0
+      12: 0
+      13: 0
+      14: "Węgierska Górka;Żywiec;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
+      15: true
+      16: false
+      17: false
+    */
+
+    const trainsAPIResponse: TrainResponse = await (
+      await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
+    ).json();
+
+    const reducedList = await trainsAPIResponse.message.reduce(async (acc: Promise<string[]>, train: TrainInfo) => {
+      const timetableAPIResponse: TimetableResponse = await (
+        await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
+      ).json();
+
+      const timetable: TimetableInfo = timetableAPIResponse.message;
+
+      if (!timetable.trainInfo) return acc;
+      if (!timetable.stopPoints) return acc;
+
+      const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
+        (sp) => sp.pointNameRAW == this.selectedStationName
+      );
+
+      if (!stopInfo) return acc;
+      if (!stopInfo.departureLine) return acc;
+      if (stopInfo.confirmed == 1) return acc;
+
+      (await acc).push(stopInfo.pointNameRAW + ': ' + timetable.trainInfo.driverName);
+
+      return acc;
+    }, Promise.resolve([]));
+
+    console.log(reducedList);
+  },
 });
 </script>
 

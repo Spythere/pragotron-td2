@@ -14,16 +14,17 @@
       </div>
 
       <div class="table">
-        <div class="row" v-for="i in new Array(8)" :key="i">
-          <div class="row-content">
+        <div class="row" v-for="(departure, i) in departureList" :key="i">
+          <div class="row-content" v-if="!departure"></div>
+          <div class="row-content" v-else>
             <span class="destination">
-              <div class="station-slider-slot"></div>
+              <div class="station-slider-slot">{{ departure.routeTo.toUpperCase() }}</div>
             </span>
             <span class="via-station">
-              <div class="station-slider-slot"></div>
+              <div class="station-slider-slot">{{ departure.routeVia.toUpperCase() }}</div>
             </span>
             <span class="train-class">
-              <div class="train-slider-slot"></div>
+              <div class="train-slider-slot">{{ departure.trainType }} {{ departure.trainNo }}</div>
             </span>
             <span class="departure-date">
               <span class="hours-slot"></span>
@@ -31,7 +32,7 @@
               <span class="seconds-slot"></span>
             </span>
             <span class="delay">
-              <div class="delay-slider-slot"></div>
+              <div class="delay-slider-slot" v-if="departure.delayMinutes > 0">{{ departure.delayMinutes }} min</div>
             </span>
           </div>
         </div>
@@ -45,77 +46,97 @@
 
 import { defineComponent, inject, Ref } from 'vue';
 
-import stationDataJSON from '@/data/stationList.json';
-
 import { TrainResponse, TrainInfo } from '@/interfaces/TrainAPI';
 import { TimetableResponse, TimetableInfo, TimetableStopInfo } from '@/interfaces/TimetableAPI';
+import StationData from '@/interfaces/StationData';
+
+interface DepartureInfo {
+  timetableId: number;
+
+  routeTo: string;
+  routeVia: string;
+
+  trainNo: number;
+  trainType: string;
+  departureDate: Date;
+  delayMinutes: number;
+}
 
 export default defineComponent({
   data: () => ({
     currentStationName: '',
-    stationDataJSON,
+    departureList: new Array(8).fill(null) as (DepartureInfo | null)[],
   }),
 
   setup() {
-    const selectedStationName = inject('selectedStationName') as Ref<string>;
+    const selectedStation = inject('selectedStation') as Ref<StationData>;
 
-    console.log(selectedStationName.value);
+    console.log(selectedStation.value.stationName);
 
     return {
-      selectedStationName,
+      selectedStation,
     };
   },
 
   async mounted() {
-    /*
-      0: "LCS Żywiec"
-      1: "https://td2.info.pl/scenerie/lcs-zywiec/"
-      2: "97, 139"
-      3: null
-      4: "10"
-      5: "NIE"
-      6: "współczesna"
-      7: "SCS"
-      8: "" - sbl
-      9: "" - blokady
-      10: 3
-      11: 0
-      12: 0
-      13: 0
-      14: "Węgierska Górka;Żywiec;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
-      15: true
-      16: false
-      17: false
-    */
-
     const trainsAPIResponse: TrainResponse = await (
       await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
     ).json();
 
-    const reducedList = await trainsAPIResponse.message.reduce(async (acc: Promise<string[]>, train: TrainInfo) => {
-      const timetableAPIResponse: TimetableResponse = await (
-        await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
-      ).json();
+    const departureList = (
+      await trainsAPIResponse.message.reduce(async (acc: Promise<DepartureInfo[]>, train: TrainInfo) => {
+        const timetableAPIResponse: TimetableResponse = await (
+          await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
+        ).json();
 
-      const timetable: TimetableInfo = timetableAPIResponse.message;
+        const timetable: TimetableInfo = timetableAPIResponse.message;
 
-      if (!timetable.trainInfo) return acc;
-      if (!timetable.stopPoints) return acc;
+        if (!timetable.trainInfo) return acc;
+        if (!timetable.stopPoints) return acc;
 
-      const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
-        (sp) => sp.pointNameRAW == this.selectedStationName
-      );
+        const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
+          (sp) => sp.pointNameRAW.toLowerCase() == this.selectedStation.stationName.toLowerCase()
+        );
 
-      if (!stopInfo) return acc;
-      if (!stopInfo.departureLine) return acc;
-      if (stopInfo.confirmed == 1) return acc;
+        if (!stopInfo) return acc;
+        if (!stopInfo.departureLine || !stopInfo.departureTime) return acc;
+        if (stopInfo.confirmed == 1) return acc;
 
-      (await acc).push(stopInfo.pointNameRAW + ': ' + timetable.trainInfo.driverName);
+        const stopInfoIndex = timetable.stopPoints.indexOf(stopInfo);
+        const { timetableId, trainNo, route, trainCategoryCode } = timetable.trainInfo;
+        const { departureTime, departureDelay } = stopInfo;
 
-      return acc;
-    }, Promise.resolve([]));
+        const routeVia =
+          timetable.stopPoints.find((stop, i) => {
+            if (
+              i > stopInfoIndex &&
+              i != (timetable.stopPoints || []).length - 1 &&
+              stop.pointName.includes('strong') &&
+              stop.pointStopTime &&
+              stop.pointStopTime > 0
+            )
+              return true;
 
-    console.log(reducedList);
+            return false;
+          })?.pointNameRAW || '';
+
+        (await acc).push({
+          timetableId,
+          routeTo: route.split('|')[1],
+          routeVia,
+          trainNo,
+          trainType: trainCategoryCode,
+          departureDate: departureTime,
+          delayMinutes: departureDelay,
+        });
+
+        return acc;
+      }, Promise.resolve([]))
+    ).sort((d1, d2) => (d1.departureDate > d2.departureDate ? 1 : -1));
+
+    const sortedList = new Array(8).fill(0).map((v, i) => (i > departureList.length ? null : departureList[i]));
+
+    this.departureList = sortedList;
   },
 });
 </script>
@@ -171,9 +192,11 @@ export default defineComponent({
     grid-template-columns: 2fr 2fr 1fr 1fr 1fr;
     height: 100%;
 
-    span {
-      background: #333;
-    }
+    align-items: center;
+    color: white;
+    font-size: 1.2em;
+
+    background: #333;
   }
 }
 </style>

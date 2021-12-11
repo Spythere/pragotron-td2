@@ -1,8 +1,8 @@
 <template>
-  <div class="scenery-selector" v-if="selectedStationName.length == 0">
-    <select name="scenery" id="select-scenery" v-model="selectedStationName">
-      <option value="" disabled>Wybierz scenerię</option>
-      <option v-for="name in onlineStationNames" :key="name">{{ name }}</option>
+  <div class="scenery-selector" v-if="!selectedStation">
+    <select name="scenery" id="select-scenery" v-model="selectedStation">
+      <option :value="null" disabled>Wybierz scenerię</option>
+      <option v-for="s in onlineStations" :key="s" :value="s">{{ s.stationName }}</option>
     </select>
   </div>
 
@@ -10,11 +10,14 @@
 </template>
 
 <script lang="ts">
-import { provide, ref } from 'vue';
+import { provide, Ref, ref } from 'vue';
 import { defineComponent } from '@vue/runtime-core';
 import PragotronVue from './components/Pragotron.vue';
 
-import { StationResponse, StationInfo } from '@/interfaces/StationAPI';
+import { StationResponse } from '@/interfaces/StationAPI';
+import StationData from '@/interfaces/StationData';
+
+import stationNameAbbrevs from '@/data/stationAbbrevs.json';
 
 export default defineComponent({
   components: {
@@ -22,34 +25,77 @@ export default defineComponent({
   },
 
   setup() {
-    const selectedStationName = ref('');
+    const mockStation: StationData = {
+      stationName: 'Lisków',
+      nameAbbreviation: '',
+      stationCheckpoints: [],
+    };
 
-    provide('selectedStationName', selectedStationName);
+    const selectedStation = ref(mockStation) as Ref<null | StationData>;
+
+    provide('selectedStation', selectedStation);
 
     return {
-      selectedStationName,
+      selectedStation,
     };
   },
 
   data: () => ({
-    onlineStationNames: [] as string[],
+    onlineStations: [] as StationData[],
   }),
 
   async mounted() {
+    /*
+      0: "LCS Żywiec"
+      1: "https://td2.info.pl/scenerie/lcs-zywiec/"
+      2: "97, 139"
+      3: null
+      4: "10"
+      5: "NIE"
+      6: "współczesna"
+      7: "SCS"
+      8: "" - sbl
+      9: "" - blokady
+      10: 3
+      11: 0
+      12: 0
+      13: 0
+      14: "Węgierska Górka;Żywiec;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
+      15: true
+      16: false
+      17: false
+    */
+
+    const stationDataArray: any[][] = await (await fetch('https://spythere.github.io/api/stationData.json')).json();
+
+    const stationDataJSON = stationDataArray.map((stationData) => ({
+      stationName: stationData[0] as string,
+      stationCheckpoints: stationData[14] ? (stationData[14] as string).split(';') : [],
+      nameAbbreviation: stationNameAbbrevs.find((name) => (stationData[0] as string).includes(name[0]))?.[0] || '',
+    }));
+
     const stationsAPIResponse: StationResponse = await (
       await fetch('https://api.td2.info.pl:9640/?method=getStationsOnline')
     ).json();
 
-    this.onlineStationNames = stationsAPIResponse.message
+    this.onlineStations = stationsAPIResponse.message
       .reduce((acc, station) => {
         if (station.region != 'eu') return acc;
         if (!station.isOnline) return acc;
 
-        acc.push(station.stationName);
+        const savedStationData = stationDataJSON.find((data) => data.stationName == station.stationName);
+
+        if (savedStationData) acc.push(savedStationData);
+        else
+          acc.push({
+            stationName: station.stationName,
+            nameAbbreviation: '',
+            stationCheckpoints: [],
+          });
 
         return acc;
-      }, [] as string[])
-      .sort((s1, s2) => (s1 > s2 ? 1 : -1));
+      }, [] as StationData[])
+      .sort((s1, s2) => (s1.stationName > s2.stationName ? 1 : -1));
   },
 });
 </script>

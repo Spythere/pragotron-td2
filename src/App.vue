@@ -17,8 +17,6 @@ import PragotronVue from './components/Pragotron.vue';
 import { StationResponse } from '@/interfaces/StationAPI';
 import StationData from '@/interfaces/StationData';
 
-import stationNameAbbrevs from '@/data/stationAbbrevs.json';
-
 export default defineComponent({
   components: {
     PragotronVue,
@@ -26,7 +24,7 @@ export default defineComponent({
 
   setup() {
     const mockStation: StationData = {
-      stationName: 'Lisków',
+      stationName: 'Czermin',
       nameAbbreviation: '',
       stationCheckpoints: [],
     };
@@ -71,7 +69,7 @@ export default defineComponent({
     const stationDataJSON = stationDataArray.map((stationData) => ({
       stationName: stationData[0] as string,
       stationCheckpoints: stationData[14] ? (stationData[14] as string).split(';') : [],
-      nameAbbreviation: stationNameAbbrevs.find((name) => (stationData[0] as string).includes(name[0]))?.[0] || '',
+      nameAbbreviation: '',
     }));
 
     const stationsAPIResponse: StationResponse = await (

@@ -13,14 +13,14 @@
   11: 0
   12: 0
   13: 0
-  14: "Węgierska Górka;Żywiec;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
+  14: "Żywiec;Węgierska Górka;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
   15: true
   16: false
   17: false
 */
 
 export default interface StationData {
-    stationName: string;
-    nameAbbreviation: string;
-    stationCheckpoints: string[];
+  stationName: string;
+  nameAbbreviation: string;
+  stationCheckpoints: string[];
 }

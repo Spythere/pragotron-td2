@@ -15,24 +15,61 @@
 
       <div class="table">
         <div class="row" v-for="(departure, i) in departureList" :key="i">
-          <div class="row-content" v-if="!departure"></div>
-          <div class="row-content" v-else>
-            <span class="destination">
-              <div class="station-slider-slot">{{ departure.routeTo.toUpperCase() }}</div>
+          <div class="row-content">
+            <span class="route-to">
+              <transition name="slot-anim" mode="out-in">
+                <div class="slider-slot" :key="departure.routeTo">
+                  {{ departure.routeTo.toUpperCase() }}
+                </div>
+              </transition>
             </span>
-            <span class="via-station">
-              <div class="station-slider-slot">{{ departure.routeVia.toUpperCase() }}</div>
+
+            <span class="route-via">
+              <transition name="slot-anim" mode="out-in">
+                <div class="slider-slot" :key="departure.routeVia">{{ departure.routeVia.toUpperCase() }}</div>
+              </transition>
             </span>
+
             <span class="train-class">
-              <div class="train-slider-slot">{{ departure.trainType }} {{ departure.trainNo }}</div>
+              <transition name="slot-anim" mode="out-in">
+                <div class="slider-slot" :key="departure.trainNumber">{{ departure.trainNumber }}</div>
+              </transition>
             </span>
+
             <span class="departure-date">
-              <span class="hours-slot"></span>
-              <span class="minutes-slot"></span>
-              <span class="seconds-slot"></span>
+              <transition name="slot-anim" mode="out-in">
+                <span class="slider-slot-digit" :key="departure.departureDigits[0]">{{
+                  departure.departureDigits[0]
+                }}</span>
+              </transition>
+
+              <transition name="slot-anim" mode="out-in">
+                <span class="slider-slot-digit" :key="departure.departureDigits[1]">
+                  {{ departure.departureDigits[1] }}</span
+                >
+              </transition>
+
+              <span :key="departure.departureDigits[1]"> : </span>
+
+              <transition name="slot-anim" mode="out-in">
+                <span class="slider-slot-digit" :key="departure.departureDigits[2]">
+                  {{ departure.departureDigits[2] }}
+                </span>
+              </transition>
+
+              <transition name="slot-anim" mode="out-in">
+                <span class="slider-slot-digit" :key="departure.departureDigits[3]">
+                  {{ departure.departureDigits[3] }}
+                </span>
+              </transition>
             </span>
+
             <span class="delay">
-              <div class="delay-slider-slot" v-if="departure.delayMinutes > 0">{{ departure.delayMinutes }} min</div>
+              <transition name="slot-anim" mode="out-in">
+                <div class="slider-slot" :key="departure.delayMinutes">
+                  {{ departure.delayMinutes > 0 ? departure.delayMinutes + ' min' : '' }}
+                </div>
+              </transition>
             </span>
           </div>
         </div>
@@ -46,6 +83,9 @@
 
 import { defineComponent, inject, Ref } from 'vue';
 
+import stationAbbrevs from '@/data/stationAbbrevs.json';
+import routeValues from '@/data/routeValues.json';
+
 import { TrainResponse, TrainInfo } from '@/interfaces/TrainAPI';
 import { TimetableResponse, TimetableInfo, TimetableStopInfo } from '@/interfaces/TimetableAPI';
 import StationData from '@/interfaces/StationData';
@@ -56,16 +96,26 @@ interface DepartureInfo {
   routeTo: string;
   routeVia: string;
 
-  trainNo: number;
-  trainType: string;
+  trainNumber: string;
+
   departureDate: Date;
+  departureDigits: string[];
+
   delayMinutes: number;
+
+  currentRouteTo: string;
+  currentRouteVia?: string;
 }
 
 export default defineComponent({
   data: () => ({
     currentStationName: '',
-    departureList: new Array(8).fill(null) as (DepartureInfo | null)[],
+
+    seekingTable: [],
+
+    departureList: [] as DepartureInfo[],
+
+    stationAbbrevs: stationAbbrevs as { [key: string]: string },
   }),
 
   setup() {
@@ -78,7 +128,90 @@ export default defineComponent({
     };
   },
 
+  methods: {
+    addSeekedValue(desiredValue: string, sourceCollection: string[], startIndex: number = 0) {
+      let currentIndex = startIndex - 1;
+      let collection = [...sourceCollection];
+
+      if (!collection.includes(desiredValue)) collection.push(desiredValue);
+
+      let tempSwap, randIndex;
+      for (let i = 1; i < collection.length; i++) {
+        randIndex = Math.floor(Math.random() * collection.length);
+
+        if (randIndex == 0) randIndex++;
+
+        tempSwap = collection[i];
+
+        collection[i] = collection[randIndex];
+        collection[randIndex] = tempSwap;
+      }
+
+      console.log('Desired value:', desiredValue);
+
+      const intv = setInterval(() => {
+        const currentValue = collection[++currentIndex];
+
+        if (currentIndex > collection.length - 1) {
+          console.log('Value not found!');
+
+          clearInterval(intv);
+          return;
+        }
+
+        if (currentValue == desiredValue) {
+          console.log('Value found:', currentValue);
+
+          clearInterval(intv);
+          return;
+        }
+
+        console.log('Seeking value...', currentValue, currentIndex);
+      }, 100);
+    },
+    fillTable(responseArray: DepartureInfo[] = []) {
+      if (this.departureList.length == 0)
+        this.departureList = new Array(7).fill({
+          timetableId: -1,
+
+          routeTo: '',
+          routeVia: '',
+
+          trainNumber: '',
+
+          departureDate: new Date(0),
+          departureDigits: [],
+
+          delayMinutes: 0,
+          currentRouteTo: '',
+        });
+
+      for (let i = 0; i < this.departureList.length; i++) {
+        if (i > responseArray.length - 1)
+          this.departureList[i] = {
+            timetableId: -1,
+
+            routeTo: '',
+            routeVia: '',
+
+            trainNumber: '',
+
+            departureDate: new Date(0),
+            departureDigits: [],
+
+            delayMinutes: 0,
+            currentRouteTo: '',
+          };
+        else this.departureList[i] = { ...responseArray[i] };
+      }
+    },
+  },
+
   async mounted() {
+    this.fillTable();
+
+    this.addSeekedValue('Test', routeValues, 0);
+
     const trainsAPIResponse: TrainResponse = await (
       await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
     ).json();
@@ -120,31 +253,94 @@ export default defineComponent({
             return false;
           })?.pointNameRAW || '';
 
+        const departureDate = new Date(departureTime);
+
+        // [HH, MM, SS] - nienawidzę dat w JavaScripcie
+        const dateArray = departureDate.toLocaleString('pl-PL').split(', ')[1].split(':');
+
+        // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
+        const departureDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
+
+        const routeTo = route.split('|')[1];
+        const routeToAbbrev = this.stationAbbrevs[routeTo] || null;
+
         (await acc).push({
           timetableId,
-          routeTo: route.split('|')[1],
+          routeTo: routeToAbbrev || routeTo,
           routeVia,
-          trainNo,
-          trainType: trainCategoryCode,
-          departureDate: departureTime,
+          trainNumber: `${trainCategoryCode} ${trainNo}`,
+          departureDate: new Date(departureTime),
+          departureDigits,
           delayMinutes: departureDelay,
+          currentRouteTo: routeValues[0],
         });
 
         return acc;
       }, Promise.resolve([]))
     ).sort((d1, d2) => (d1.departureDate > d2.departureDate ? 1 : -1));
 
-    const sortedList = new Array(8).fill(0).map((v, i) => (i > departureList.length ? null : departureList[i]));
+    this.fillTable(departureList);
 
-    this.departureList = sortedList;
+    // const sortedList: DepartureInfo[] = new Array(8)
+    //   .fill({
+    //     timetableId: -1,
+
+    //     routeTo: '',
+    //     routeVia: '',
+
+    //     trainNumber: '',
+
+    //     departureDate: new Date(0),
+    //     departureDigits: [],
+
+    //     delayMinutes: 0,
+    //     currentRouteTo: '',
+    //   })
+    //   .map((v, i) => (i > departureList.length - 1 ? v : departureList[i]));
+
+    // setInterval(() => {
+    //   sortedList.forEach(d => {
+    //     if(d.currentRouteTo == d.routeTo)
+    //       return;
+
+    //   })
+    // }, 500);
   },
 });
 </script>
 
 <style lang="scss" scoped>
+/* ****** ANIMATION ****** */
+
+.slot-anim {
+  &-enter-active,
+  &-leave-active {
+    transition: all 80ms ease-in;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    transform: rotateX(90deg) perspective(200px);
+  }
+}
+
+.digit-slot-anim {
+  &-enter-active,
+  &-leave-active {
+    transition: all 150ms ease-out;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+  }
+}
+
+/* ************** */
+
 .pragotron {
   width: 1200px;
-  height: 600px;
+  height: 650px;
 
   background: black;
 }
@@ -196,7 +392,35 @@ export default defineComponent({
     color: white;
     font-size: 1.2em;
 
-    background: #333;
+    background: #1a1a1a;
+
+    span {
+      display: flex;
+      justify-content: center;
+    }
   }
+}
+
+.departure-date {
+  display: flex;
+  background: black;
+
+  .dot {
+    flex-grow: 1;
+  }
+
+  span {
+    background: black;
+    height: 2em;
+    line-height: 2em;
+    flex-grow: 2;
+  }
+}
+
+.slider-slot {
+  background: #010101;
+  width: 80%;
+  height: 2em;
+  line-height: 2em;
 }
 </style>

@@ -2,7 +2,9 @@
   <div class="pragotron">
     <div class="wrapper">
       <div class="top-pane">
-        <span class="title">ODJAZDY</span>
+        <span class="title">
+          <div>{{ selectedStation.stationName.toUpperCase() }}</div>
+        </span>
 
         <div class="headers">
           <span>DO STACJI</span>
@@ -18,15 +20,17 @@
           <div class="row-content">
             <span class="route-to">
               <transition name="slot-anim" mode="out-in">
-                <div class="slider-slot" :key="departure.routeTo">
-                  {{ departure.routeTo.toUpperCase() }}
+                <div class="slider-slot" :key="departure.tableValues.routeTo">
+                  {{ abbrevStationName(departure.tableValues.routeTo) }}
                 </div>
               </transition>
             </span>
 
             <span class="route-via">
               <transition name="slot-anim" mode="out-in">
-                <div class="slider-slot" :key="departure.routeVia">{{ departure.routeVia.toUpperCase() }}</div>
+                <div class="slider-slot" :key="departure.tableValues.routeVia">
+                  {{ abbrevStationName(departure.tableValues.routeVia) }}
+                </div>
               </transition>
             </span>
 
@@ -81,14 +85,16 @@
 <script lang="ts">
 /* eslint-disable */
 
-import { defineComponent, inject, Ref } from 'vue';
+import { defineComponent, inject, reactive, Ref } from 'vue';
 
-import stationAbbrevs from '@/data/stationAbbrevs.json';
+import stationAbbrevsJSON from '@/data/stationAbbrevs.json';
 import routeValues from '@/data/routeValues.json';
 
 import { TrainResponse, TrainInfo } from '@/interfaces/TrainAPI';
 import { TimetableResponse, TimetableInfo, TimetableStopInfo } from '@/interfaces/TimetableAPI';
 import StationData from '@/interfaces/StationData';
+
+const stationAbbrevs: { [key: string]: string } = stationAbbrevsJSON;
 
 interface DepartureInfo {
   timetableId: number;
@@ -103,17 +109,43 @@ interface DepartureInfo {
 
   delayMinutes: number;
 
-  currentRouteTo: string;
-  currentRouteVia?: string;
+  tableValues: {
+    routeTo: string;
+    routeVia: string;
+  };
 }
+
+const departureInfoEmptyObj: DepartureInfo = {
+  timetableId: -1,
+
+  routeTo: '',
+  routeVia: '',
+
+  trainNumber: '',
+
+  departureDate: new Date(0),
+  departureDigits: [],
+
+  delayMinutes: 0,
+
+  tableValues: reactive({
+    routeTo: '',
+    routeVia: '',
+  }),
+};
 
 export default defineComponent({
   data: () => ({
     currentStationName: '',
 
-    seekingTable: [],
+    // seekingTable: [] as { collection: string[]; currentIndex: number }[][],
 
-    departureList: [] as DepartureInfo[],
+    lastRefreshTime: 0,
+
+    departureList: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as DepartureInfo[],
+    departureRoutes: [''],
+
+    currentRouteIndex: 0,
 
     stationAbbrevs: stationAbbrevs as { [key: string]: string },
   }),
@@ -121,190 +153,166 @@ export default defineComponent({
   setup() {
     const selectedStation = inject('selectedStation') as Ref<StationData>;
 
-    console.log(selectedStation.value.stationName);
-
     return {
       selectedStation,
     };
   },
 
   methods: {
-    addSeekedValue(desiredValue: string, sourceCollection: string[], startIndex: number = 0) {
-      let currentIndex = startIndex - 1;
-      let collection = [...sourceCollection];
-
-      if (!collection.includes(desiredValue)) collection.push(desiredValue);
-
-      let tempSwap, randIndex;
-      for (let i = 1; i < collection.length; i++) {
-        randIndex = Math.floor(Math.random() * collection.length);
-
-        if (randIndex == 0) randIndex++;
-
-        tempSwap = collection[i];
-
-        collection[i] = collection[randIndex];
-        collection[randIndex] = tempSwap;
-      }
-
-      console.log('Desired value:', desiredValue);
-
-      const intv = setInterval(() => {
-        const currentValue = collection[++currentIndex];
-
-        if (currentIndex > collection.length - 1) {
-          console.log('Value not found!');
-
-          clearInterval(intv);
-          return;
-        }
-
-        if (currentValue == desiredValue) {
-          console.log('Value found:', currentValue);
-
-          clearInterval(intv);
-          return;
-        }
-
-        console.log('Seeking value...', currentValue, currentIndex);
-      }, 100);
+    abbrevStationName(name: string) {
+      return (name in stationAbbrevs ? stationAbbrevs[name] : name).toUpperCase();
     },
-    fillTable(responseArray: DepartureInfo[] = []) {
-      if (this.departureList.length == 0)
-        this.departureList = new Array(7).fill({
-          timetableId: -1,
 
-          routeTo: '',
-          routeVia: '',
+    // d = 0 -> time = time
+    // d = time -> time2 = time2-time
+    updateTableRows(time: number) {
+      if (time >= this.lastRefreshTime + 125) {
+        this.departureList.forEach((dep, i) => {
+          if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
+            dep.tableValues.routeTo = this.departureRoutes[(this.currentRouteIndex + i) % this.departureRoutes.length];
+          }
 
-          trainNumber: '',
-
-          departureDate: new Date(0),
-          departureDigits: [],
-
-          delayMinutes: 0,
-          currentRouteTo: '',
+          if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
+            dep.tableValues.routeVia = this.departureRoutes[(this.currentRouteIndex + i + 1) % this.departureRoutes.length];
+          }
         });
 
-      for (let i = 0; i < this.departureList.length; i++) {
-        if (i > responseArray.length - 1)
-          this.departureList[i] = {
-            timetableId: -1,
-
-            routeTo: '',
-            routeVia: '',
-
-            trainNumber: '',
-
-            departureDate: new Date(0),
-            departureDigits: [],
-
-            delayMinutes: 0,
-            currentRouteTo: '',
-          };
-        else this.departureList[i] = { ...responseArray[i] };
+        this.currentRouteIndex = (this.currentRouteIndex + 1) % this.departureRoutes.length;
+        this.lastRefreshTime = time;
       }
+
+      requestAnimationFrame(this.updateTableRows);
+    },
+
+    fillTable(departureUpdateList: DepartureInfo[] = []) {
+      for (let i = 0; i < 7; i++) {
+        if (i <= departureUpdateList.length - 1) {
+          const updateInfo = departureUpdateList[i];
+          const existingInfo = this.departureList[i];
+
+          // if (updateInfo.delayMinutes != existingInfo.delayMinutes) {
+          //   this.departureList[i].delayMinutes = updateInfo.delayMinutes;
+          //   continue;
+          // }
+
+          // // Podmień jeśli
+          // if (updateInfo.timetableId != existingInfo.timetableId) {
+          //   this.departureList[i] = updateInfo;
+          // }
+          
+          this.departureList[i] = updateInfo;
+          this.departureList[i].tableValues.routeTo = existingInfo.routeTo;
+          this.departureList[i].tableValues.routeVia = existingInfo.routeVia;
+          
+        } else {
+          this.departureList[i] = departureInfoEmptyObj;
+        }
+      }
+
+      console.log(this.departureList);
+    },
+    shuffleRoutes() {
+      for (let i = 0; i < 25; i++) {
+        const randIndex = Math.floor(Math.random() * routeValues.length);
+        const randRoute = routeValues[randIndex];
+
+        this.departureRoutes.push(randRoute);
+      }
+
+      this.departureRoutes.sort(() => Math.random() - 0.5);
+    },
+
+    async fetchDepartureList() {
+      const trainsAPIResponse: TrainResponse = await (
+        await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
+      ).json();
+
+      const departureList = (
+        await trainsAPIResponse.message.reduce(async (acc: Promise<DepartureInfo[]>, train: TrainInfo) => {
+          const timetableAPIResponse: TimetableResponse = await (
+            await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
+          ).json();
+
+          const timetable: TimetableInfo = timetableAPIResponse.message;
+
+          if (!timetable.trainInfo) return acc;
+          if (!timetable.stopPoints) return acc;
+
+          const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
+            (sp) => sp.pointNameRAW.toLowerCase() == this.selectedStation.stationName.toLowerCase()
+          );
+
+          if (!stopInfo) return acc;
+          if (!stopInfo.departureLine || !stopInfo.departureTime) return acc;
+          if (stopInfo.confirmed == 1) return acc;
+
+          const stopInfoIndex = timetable.stopPoints.indexOf(stopInfo);
+          const { timetableId, trainNo, route, trainCategoryCode } = timetable.trainInfo;
+          const { departureTime, departureDelay } = stopInfo;
+
+          const routeVia =
+            timetable.stopPoints.find((stop, i) => {
+              if (
+                i > stopInfoIndex &&
+                i != (timetable.stopPoints || []).length - 1 &&
+                stop.pointName.includes('strong') &&
+                stop.pointStopTime &&
+                stop.pointStopTime > 0
+              )
+                return true;
+
+              return false;
+            })?.pointNameRAW || '';
+
+          const departureDate = new Date(departureTime);
+
+          // [HH, MM, SS] - nienawidzę dat w JavaScripcie
+          const dateArray = departureDate.toLocaleString('pl-PL').split(', ')[1].split(':');
+
+          // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
+          const departureDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
+
+          const routeTo = route.split('|')[1];
+
+          (await acc).push({
+            timetableId,
+            routeTo: routeTo,
+            routeVia,
+            trainNumber: `${trainCategoryCode} ${trainNo}`,
+            departureDate: new Date(departureTime),
+            departureDigits,
+            delayMinutes: departureDelay,
+
+            tableValues: reactive({
+              routeTo: '',
+              routeVia: '',
+            }),
+          });
+
+          if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
+          if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
+
+          return acc;
+        }, Promise.resolve([]))
+      ).sort((d1, d2) => (d1.departureDate > d2.departureDate ? 1 : -1));
+
+      this.fillTable(departureList);
     },
   },
 
   async mounted() {
     this.fillTable();
+    this.fetchDepartureList();
+    this.shuffleRoutes();
 
-    this.addSeekedValue('Test', routeValues, 0);
+    setInterval(() => {
+      this.fetchDepartureList();
+      this.shuffleRoutes();
 
-    const trainsAPIResponse: TrainResponse = await (
-      await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
-    ).json();
+      console.log('Loading data');
+    }, 10000);
 
-    const departureList = (
-      await trainsAPIResponse.message.reduce(async (acc: Promise<DepartureInfo[]>, train: TrainInfo) => {
-        const timetableAPIResponse: TimetableResponse = await (
-          await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
-        ).json();
-
-        const timetable: TimetableInfo = timetableAPIResponse.message;
-
-        if (!timetable.trainInfo) return acc;
-        if (!timetable.stopPoints) return acc;
-
-        const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
-          (sp) => sp.pointNameRAW.toLowerCase() == this.selectedStation.stationName.toLowerCase()
-        );
-
-        if (!stopInfo) return acc;
-        if (!stopInfo.departureLine || !stopInfo.departureTime) return acc;
-        if (stopInfo.confirmed == 1) return acc;
-
-        const stopInfoIndex = timetable.stopPoints.indexOf(stopInfo);
-        const { timetableId, trainNo, route, trainCategoryCode } = timetable.trainInfo;
-        const { departureTime, departureDelay } = stopInfo;
-
-        const routeVia =
-          timetable.stopPoints.find((stop, i) => {
-            if (
-              i > stopInfoIndex &&
-              i != (timetable.stopPoints || []).length - 1 &&
-              stop.pointName.includes('strong') &&
-              stop.pointStopTime &&
-              stop.pointStopTime > 0
-            )
-              return true;
-
-            return false;
-          })?.pointNameRAW || '';
-
-        const departureDate = new Date(departureTime);
-
-        // [HH, MM, SS] - nienawidzę dat w JavaScripcie
-        const dateArray = departureDate.toLocaleString('pl-PL').split(', ')[1].split(':');
-
-        // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
-        const departureDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
-
-        const routeTo = route.split('|')[1];
-        const routeToAbbrev = this.stationAbbrevs[routeTo] || null;
-
-        (await acc).push({
-          timetableId,
-          routeTo: routeToAbbrev || routeTo,
-          routeVia,
-          trainNumber: `${trainCategoryCode} ${trainNo}`,
-          departureDate: new Date(departureTime),
-          departureDigits,
-          delayMinutes: departureDelay,
-          currentRouteTo: routeValues[0],
-        });
-
-        return acc;
-      }, Promise.resolve([]))
-    ).sort((d1, d2) => (d1.departureDate > d2.departureDate ? 1 : -1));
-
-    this.fillTable(departureList);
-
-    // const sortedList: DepartureInfo[] = new Array(8)
-    //   .fill({
-    //     timetableId: -1,
-
-    //     routeTo: '',
-    //     routeVia: '',
-
-    //     trainNumber: '',
-
-    //     departureDate: new Date(0),
-    //     departureDigits: [],
-
-    //     delayMinutes: 0,
-    //     currentRouteTo: '',
-    //   })
-    //   .map((v, i) => (i > departureList.length - 1 ? v : departureList[i]));
-
-    // setInterval(() => {
-    //   sortedList.forEach(d => {
-    //     if(d.currentRouteTo == d.routeTo)
-    //       return;
-
-    //   })
-    // }, 500);
+    requestAnimationFrame(this.updateTableRows);
   },
 });
 </script>
@@ -315,7 +323,7 @@ export default defineComponent({
 .slot-anim {
   &-enter-active,
   &-leave-active {
-    transition: all 80ms ease-in;
+    transition: all 50ms ease-in-out;
   }
 
   &-enter-from,
@@ -354,7 +362,11 @@ export default defineComponent({
 
 .top-pane {
   background: white;
-  height: 130px;
+  height: 180px;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 
   .title {
     padding: 0;
@@ -419,7 +431,7 @@ export default defineComponent({
 
 .slider-slot {
   background: #010101;
-  width: 80%;
+  width: 85%;
   height: 2em;
   line-height: 2em;
 }

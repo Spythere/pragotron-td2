@@ -24,7 +24,7 @@ export default defineComponent({
 
   setup() {
     const mockStation: StationData = {
-      stationName: 'Czermin',
+      stationName: 'Lisków',
       nameAbbreviation: '',
       stationCheckpoints: [],
     };

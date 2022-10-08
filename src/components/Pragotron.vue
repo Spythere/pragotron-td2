@@ -87,35 +87,16 @@
 
 import { defineComponent, inject, reactive, Ref } from 'vue';
 
-import stationAbbrevsJSON from '@/data/stationAbbrevs.json';
-import routeValues from '@/data/routeValues.json';
+import stationAbbrevsJSON from '../data/stationAbbrevs.json';
+import routeValues from '../data/routeValues.json';
 
-import { TrainResponse, TrainInfo } from '@/interfaces/TrainAPI';
-import { TimetableResponse, TimetableInfo, TimetableStopInfo } from '@/interfaces/TimetableAPI';
-import StationData from '@/interfaces/StationData';
+import { IDeparture } from '../types/IDeparture';
+import StationData from '../types/IStationData';
+import { ITimetableStop, ITrainResponse } from '../types/ITrainResponse';
 
 const stationAbbrevs: { [key: string]: string } = stationAbbrevsJSON;
 
-interface DepartureInfo {
-  timetableId: number;
-
-  routeTo: string;
-  routeVia: string;
-
-  trainNumber: string;
-
-  departureDate: Date;
-  departureDigits: string[];
-
-  delayMinutes: number;
-
-  tableValues: {
-    routeTo: string;
-    routeVia: string;
-  };
-}
-
-const departureInfoEmptyObj: DepartureInfo = {
+const departureInfoEmptyObj: IDeparture = {
   timetableId: -1,
 
   routeTo: '',
@@ -125,6 +106,9 @@ const departureInfoEmptyObj: DepartureInfo = {
 
   departureDate: new Date(0),
   departureDigits: [],
+
+  arrivalTimestamp: 0,
+  departureTimestamp: 0,
 
   delayMinutes: 0,
 
@@ -142,7 +126,7 @@ export default defineComponent({
 
     lastRefreshTime: 0,
 
-    departureList: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as DepartureInfo[],
+    departureList: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as IDeparture[],
     departureRoutes: [''],
 
     currentRouteIndex: 0,
@@ -163,54 +147,58 @@ export default defineComponent({
       return (name in stationAbbrevs ? stationAbbrevs[name] : name).toUpperCase();
     },
 
-    // d = 0 -> time = time
-    // d = time -> time2 = time2-time
-    updateTableRows(time: number) {
+    update(time: number) {
       if (time >= this.lastRefreshTime + 125) {
-        this.departureList.forEach((dep, i) => {
-          if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
-            dep.tableValues.routeTo = this.departureRoutes[(this.currentRouteIndex + i) % this.departureRoutes.length];
-          }
-
-          if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
-            dep.tableValues.routeVia = this.departureRoutes[(this.currentRouteIndex + i + 1) % this.departureRoutes.length];
-          }
-        });
+        this.updateTableRows();
 
         this.currentRouteIndex = (this.currentRouteIndex + 1) % this.departureRoutes.length;
         this.lastRefreshTime = time;
       }
-
-      requestAnimationFrame(this.updateTableRows);
+      requestAnimationFrame(this.update);
     },
 
-    fillTable(departureUpdateList: DepartureInfo[] = []) {
-      for (let i = 0; i < 7; i++) {
+    // d = 0 -> time = time
+    // d = time -> time2 = time2-time
+    updateTableRows() {
+      this.departureList.forEach((dep, i) => {
+        if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
+          dep.tableValues.routeTo = this.departureRoutes[(this.currentRouteIndex + i) % this.departureRoutes.length];
+        }
+
+        if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
+          dep.tableValues.routeVia =
+            this.departureRoutes[(this.currentRouteIndex + i + 1) % this.departureRoutes.length];
+        }
+      });
+    },
+
+    fillTable(departureUpdateList: IDeparture[] = []) {
+      for (let i = 0; i < this.departureList.length; i++) {
         if (i <= departureUpdateList.length - 1) {
           const updateInfo = departureUpdateList[i];
           const existingInfo = this.departureList[i];
 
           // if (updateInfo.delayMinutes != existingInfo.delayMinutes) {
-          //   this.departureList[i].delayMinutes = updateInfo.delayMinutes;
+          //   this.sortedDepartureList[i].delayMinutes = updateInfo.delayMinutes;
           //   continue;
           // }
 
           // // Podmień jeśli
           // if (updateInfo.timetableId != existingInfo.timetableId) {
-          //   this.departureList[i] = updateInfo;
+          //   this.sortedDepartureList[i] = updateInfo;
           // }
-          
-          this.departureList[i] = updateInfo;
+
+          this.departureList[i] = { ...updateInfo };
           this.departureList[i].tableValues.routeTo = existingInfo.routeTo;
           this.departureList[i].tableValues.routeVia = existingInfo.routeVia;
-          
         } else {
           this.departureList[i] = departureInfoEmptyObj;
         }
       }
 
-      console.log(this.departureList);
+      console.log(departureUpdateList);
     },
+
     shuffleRoutes() {
       for (let i = 0; i < 25; i++) {
         const randIndex = Math.floor(Math.random() * routeValues.length);
@@ -223,96 +211,88 @@ export default defineComponent({
     },
 
     async fetchDepartureList() {
-      const trainsAPIResponse: TrainResponse = await (
-        await fetch('https://api.td2.info.pl:9640/?method=getTrainsOnline')
+      const trainsAPIResponse: ITrainResponse[] = await (
+        await fetch(`${import.meta.env.VITE_STACJOWNIK_API_URL}/api/getActiveTrainList`)
       ).json();
 
-      const departureList = (
-        await trainsAPIResponse.message.reduce(async (acc: Promise<DepartureInfo[]>, train: TrainInfo) => {
-          const timetableAPIResponse: TimetableResponse = await (
-            await fetch(`https://api.td2.info.pl:9640/?method=readFromSWDR&value=getTimetable%3B${train.trainNo}%3Beu`)
-          ).json();
+      if (!trainsAPIResponse) return;
 
-          const timetable: TimetableInfo = timetableAPIResponse.message;
+      const updatedDepartureList = trainsAPIResponse.reduce((list, train) => {
+        if (!train.timetable) return list;
 
-          if (!timetable.trainInfo) return acc;
-          if (!timetable.stopPoints) return acc;
+        const timetable = train.timetable;
 
-          const stopInfo: TimetableStopInfo | undefined = timetable.stopPoints.find(
-            (sp) => sp.pointNameRAW.toLowerCase() == this.selectedStation.stationName.toLowerCase()
-          );
+        const stopInfo: ITimetableStop | undefined = timetable.stopList.find(
+          (sp) => sp.stopNameRAW.toLowerCase() == this.selectedStation.stationName.toLowerCase()
+        );
 
-          if (!stopInfo) return acc;
-          if (!stopInfo.departureLine || !stopInfo.departureTime) return acc;
-          if (stopInfo.confirmed == 1) return acc;
+        if (!stopInfo || stopInfo.confirmed) return list;
 
-          const stopInfoIndex = timetable.stopPoints.indexOf(stopInfo);
-          const { timetableId, trainNo, route, trainCategoryCode } = timetable.trainInfo;
-          const { departureTime, departureDelay } = stopInfo;
+        const stopInfoIndex = timetable.stopList.indexOf(stopInfo);
+        const { departureTimestamp, departureDelay, arrivalTimestamp, departureLine } = stopInfo;
 
-          const routeVia =
-            timetable.stopPoints.find((stop, i) => {
-              if (
-                i > stopInfoIndex &&
-                i != (timetable.stopPoints || []).length - 1 &&
-                stop.pointName.includes('strong') &&
-                stop.pointStopTime &&
-                stop.pointStopTime > 0
-              )
-                return true;
+        const routeVia =
+          timetable.stopList.find((stop, i) => {
+            return (
+              i > stopInfoIndex &&
+              // i < timetable.stopList.length - 1,
+              stop.stopName.includes('strong') &&
+              stop.stopTime &&
+              stop.stopTime > 0
+            );
+          })?.stopNameRAW || '';
 
-              return false;
-            })?.pointNameRAW || '';
+        const departureDate = departureLine ? new Date(departureTimestamp) : undefined;
 
-          const departureDate = new Date(departureTime);
+        // [HH, MM, SS] - nienawidzę dat w JavaScripcie
+        const dateArray = departureDate?.toLocaleString('pl-PL').split(', ')[1].split(':') || [' ', ' ', ' ', ' '];
 
-          // [HH, MM, SS] - nienawidzę dat w JavaScripcie
-          const dateArray = departureDate.toLocaleString('pl-PL').split(', ')[1].split(':');
+        // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
+        const departureDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
 
-          // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
-          const departureDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
+        const routeTo = timetable.route.split('|')[1];
 
-          const routeTo = route.split('|')[1];
+        list.push({
+          trainNumber: `${timetable.category} ${train.trainNo}`,
+          timetableId: timetable.timetableId,
+          routeTo: routeTo,
+          routeVia: routeVia,
+          departureDate: departureDate,
+          departureDigits: departureDigits,
+          delayMinutes: departureDelay,
 
-          (await acc).push({
-            timetableId,
-            routeTo: routeTo,
-            routeVia,
-            trainNumber: `${trainCategoryCode} ${trainNo}`,
-            departureDate: new Date(departureTime),
-            departureDigits,
-            delayMinutes: departureDelay,
+          arrivalTimestamp,
+          departureTimestamp,
 
-            tableValues: reactive({
-              routeTo: '',
-              routeVia: '',
-            }),
-          });
+          tableValues: reactive({
+            routeTo: '',
+            routeVia: '',
+          }),
+        });
 
-          if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
-          if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
+        if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
+        if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
 
-          return acc;
-        }, Promise.resolve([]))
-      ).sort((d1, d2) => (d1.departureDate > d2.departureDate ? 1 : -1));
+        return list;
+      }, [] as IDeparture[]);
 
-      this.fillTable(departureList);
+      this.fillTable(
+        updatedDepartureList
+          // .filter((dep) => dep.departureDate)
+          .sort((dep1, dep2) => (dep1.departureDate?.getTime() || 0) - (dep2.departureDate?.getTime() || 0))
+      );
     },
   },
 
   async mounted() {
-    this.fillTable();
-    this.fetchDepartureList();
     this.shuffleRoutes();
+    await this.fetchDepartureList();
 
     setInterval(() => {
       this.fetchDepartureList();
-      this.shuffleRoutes();
-
-      console.log('Loading data');
     }, 10000);
 
-    requestAnimationFrame(this.updateTableRows);
+    requestAnimationFrame(this.update);
   },
 });
 </script>

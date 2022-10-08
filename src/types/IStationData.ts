@@ -19,7 +19,7 @@
   17: false
 */
 
-export default interface StationData {
+export default interface IStationData {
   stationName: string;
   nameAbbreviation: string;
   stationCheckpoints: string[];

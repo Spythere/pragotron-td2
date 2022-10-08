@@ -2,7 +2,7 @@
   <div class="scenery-selector" v-if="!selectedStation">
     <select name="scenery" id="select-scenery" v-model="selectedStation">
       <option :value="null" disabled>Wybierz scenerię</option>
-      <option v-for="s in onlineStations" :key="s" :value="s">{{ s.stationName }}</option>
+      <option v-for="s in onlineStations" :value="s">{{ s.stationName }}</option>
     </select>
   </div>
 
@@ -13,9 +13,9 @@
 import { provide, Ref, ref } from 'vue';
 import { defineComponent } from '@vue/runtime-core';
 import PragotronVue from './components/Pragotron.vue';
-
-import { StationResponse } from '@/interfaces/StationAPI';
-import StationData from '@/interfaces/StationData';
+import IStationData from './types/IStationData';
+import { ISceneryResponse } from './types/ISceneryReponse';
+import { IOnlineStationsResponse } from './types/IOnlineStationsResponse';
 
 export default defineComponent({
   components: {
@@ -23,13 +23,13 @@ export default defineComponent({
   },
 
   setup() {
-    const mockStation: StationData = {
-      stationName: 'Lisków',
+    const mockStation: IStationData = {
+      stationName: 'Czermin',
       nameAbbreviation: '',
       stationCheckpoints: [],
     };
 
-    const selectedStation = ref(mockStation) as Ref<null | StationData>;
+    const selectedStation = ref(mockStation) as Ref<null | IStationData>;
 
     provide('selectedStation', selectedStation);
 
@@ -39,40 +39,21 @@ export default defineComponent({
   },
 
   data: () => ({
-    onlineStations: [] as StationData[],
+    onlineStations: [] as IStationData[],
   }),
 
   async mounted() {
-    /*
-      0: "LCS Żywiec"
-      1: "https://td2.info.pl/scenerie/lcs-zywiec/"
-      2: "97, 139"
-      3: null
-      4: "10"
-      5: "NIE"
-      6: "współczesna"
-      7: "SCS"
-      8: "" - sbl
-      9: "" - blokady
-      10: 3
-      11: 0
-      12: 0
-      13: 0
-      14: "Węgierska Górka;Żywiec;Łodygowice;Wilkowice Bystra;BB Leszczyny;BB Lipnik, podg."
-      15: true
-      16: false
-      17: false
-    */
-
-    const stationDataArray: any[][] = await (await fetch('https://spythere.github.io/api/stationData.json')).json();
+    const stationDataArray: ISceneryResponse[] = await (
+      await fetch('https://spythere.github.io/api/stationData.json')
+    ).json();
 
     const stationDataJSON = stationDataArray.map((stationData) => ({
-      stationName: stationData[0] as string,
-      stationCheckpoints: stationData[14] ? (stationData[14] as string).split(';') : [],
+      stationName: stationData.name,
+      stationCheckpoints: stationData.checkpoints?.split(';') || [],
       nameAbbreviation: '',
     }));
 
-    const stationsAPIResponse: StationResponse = await (
+    const stationsAPIResponse: IOnlineStationsResponse = await (
       await fetch('https://api.td2.info.pl:9640/?method=getStationsOnline')
     ).json();
 
@@ -92,7 +73,7 @@ export default defineComponent({
           });
 
         return acc;
-      }, [] as StationData[])
+      }, [] as IStationData[])
       .sort((s1, s2) => (s1.stationName > s2.stationName ? 1 : -1));
   },
 });
@@ -141,3 +122,4 @@ option {
   }
 }
 </style>
+

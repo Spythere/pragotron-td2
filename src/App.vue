@@ -1,13 +1,15 @@
 <template>
   <div class="app_content">
     <nav class="navbar">
-      <div v-if="!selectedStation">Pragotron TD2</div>
+      <div v-if="!selectedStation">
+        Pragotron TD2 <span class="text--accent">v{{ VERSION }}</span> <sup>by Spythere</sup>
+      </div>
       <button v-else class="back-btn btn--text" @click="selectedStation = null">&lt; powrót</button>
     </nav>
 
     <main>
       <div class="scenery-selector" v-if="!selectedStation">
-        <h1>Scenerie online</h1>
+        <h1>Scenerie <span class="text--accent">online</span></h1>
 
         <ul class="scenery-list">
           <li v-for="(station, i) in onlineStations">
@@ -31,6 +33,8 @@ import PragotronVue from './components/Pragotron.vue';
 import IStationData from './types/IStationData';
 import { ISceneryResponse } from './types/ISceneryReponse';
 import { IOnlineStationsResponse } from './types/IOnlineStationsResponse';
+
+import packageInfo from '../package.json';
 
 export default defineComponent({
   components: {
@@ -56,6 +60,8 @@ export default defineComponent({
   data: () => ({
     onlineStations: [] as IStationData[],
     dataLoaded: false,
+
+    VERSION: packageInfo.version,
   }),
 
   async mounted() {
@@ -116,7 +122,7 @@ export default defineComponent({
 }
 
 nav {
-  flex: 0 1 auto;
+  flex: 0 1 40px;
   font-size: 1.35em;
 
   padding: 0.25em;
@@ -125,6 +131,11 @@ nav {
   align-items: center;
 
   background-color: $accentBg;
+
+  sup {
+    font-size: 0.8em;
+    color: $dimmedText;
+  }
 
   button {
     padding: 0;

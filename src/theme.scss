@@ -1,7 +1,16 @@
 $primaryText: white;
 $accentText: gold;
+$dimmedText: #ddd;
 
 $primaryBg: #333;
 $secondaryBg: #aaa;
 
 $accentBg: #327ea5;
+
+.text--accent {
+    color: $accentText;
+}
+
+.text--grayed {
+    color: $dimmedText;
+}

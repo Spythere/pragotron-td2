@@ -1,12 +1,27 @@
 <template>
-  <div class="scenery-selector" v-if="!selectedStation">
-    <select name="scenery" id="select-scenery" v-model="selectedStation">
-      <option :value="null" disabled>Wybierz scenerię</option>
-      <option v-for="s in onlineStations" :value="s">{{ s.stationName }}</option>
-    </select>
-  </div>
+  <div class="app_content">
+    <nav class="navbar">
+      <div v-if="!selectedStation">Pragotron TD2</div>
+      <button v-else class="back-btn btn--text" @click="selectedStation = null">&lt; powrót</button>
+    </nav>
 
-  <PragotronVue v-else />
+    <main>
+      <div class="scenery-selector" v-if="!selectedStation">
+        <h1>Scenerie online</h1>
+
+        <ul class="scenery-list">
+          <li v-for="(station, i) in onlineStations">
+            <span v-if="i > 0">&bull;</span>
+            <button class="btn--text" @click="handleClick(station)">
+              {{ station.stationName }}
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <PragotronVue v-else />
+    </main>
+  </div>
 </template>
 
 <script lang="ts">
@@ -29,7 +44,7 @@ export default defineComponent({
       stationCheckpoints: [],
     };
 
-    const selectedStation = ref(mockStation) as Ref<null | IStationData>;
+    const selectedStation = ref(null) as Ref<null | IStationData>;
 
     provide('selectedStation', selectedStation);
 
@@ -40,16 +55,17 @@ export default defineComponent({
 
   data: () => ({
     onlineStations: [] as IStationData[],
+    dataLoaded: false,
   }),
 
   async mounted() {
     const stationDataArray: ISceneryResponse[] = await (
-      await fetch('https://spythere.github.io/api/stationData.json')
+      await fetch(`${import.meta.env.VITE_STACJOWNIK_API_URL}/api/getSceneries`)
     ).json();
 
     const stationDataJSON = stationDataArray.map((stationData) => ({
       stationName: stationData.name,
-      stationCheckpoints: stationData.checkpoints?.split(';') || [],
+      stationCheckpoints: stationData.checkpoints?.length > 0 ? stationData.checkpoints.split(';') : [stationData.name],
       nameAbbreviation: '',
     }));
 
@@ -75,51 +91,64 @@ export default defineComponent({
         return acc;
       }, [] as IStationData[])
       .sort((s1, s2) => (s1.stationName > s2.stationName ? 1 : -1));
+
+    this.dataLoaded = true;
+  },
+
+  methods: {
+    handleClick(station: IStationData) {
+      this.selectedStation = station;
+    },
   },
 });
 </script>
 
 <style lang="scss">
-@import url('https://fonts.googleapis.com/css2?family=Monda:wght@400;700&display=swap');
+@import './styles.scss';
 
-body,
-html {
-  background: #333;
-  min-height: 100vh;
-
-  padding: 0;
-  margin: 0;
-
-  font-family: 'Monda', sans-serif;
-}
-
-input,
-button,
-select,
-option {
-  font-family: 'Monda', sans-serif;
-  font-size: 1em;
-}
-
-#app {
+.app_content {
   text-align: center;
+
+  display: flex;
+  flex-direction: column;
+
+  min-height: 100vh;
+}
+
+nav {
+  flex: 0 1 auto;
+  font-size: 1.35em;
+
+  padding: 0.25em;
+
+  display: flex;
+  align-items: center;
+
+  background-color: $accentBg;
+
+  button {
+    padding: 0;
+  }
+}
+
+main {
+  flex: 1 1 auto;
 
   display: flex;
   justify-content: center;
   align-items: center;
-
-  min-height: 100vh;
 }
 
-.scenery-selector {
+ul.scenery-list {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  padding: 1em;
+  margin: 0 auto;
+
   font-size: 1.3em;
-  color: white;
-
-  select {
-    margin-top: 1em;
-
-    width: 14em;
-  }
+  max-width: 1000px;
 }
 </style>
 

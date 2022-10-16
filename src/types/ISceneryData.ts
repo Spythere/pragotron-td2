@@ -1,4 +1,4 @@
-export default interface IStationData {
+export default interface ISceneryData {
   stationName: string;
   nameAbbreviation: string;
   stationCheckpoints: string[];

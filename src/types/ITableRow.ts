@@ -4,6 +4,7 @@ interface ITableRowValues {
 
     currentRouteToIndex: number;
     currentRouteViaIndex: number;
+    currentDateDigitIndex: number;
 
     dateDigits: string[],
 }

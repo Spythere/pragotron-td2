@@ -1,60 +1,32 @@
 <template>
   <div class="app_content">
     <nav class="navbar">
-      <div v-if="!selectedStation">
+      <router-link to="/">
         Pragotron TD2 <span class="text--accent">v{{ VERSION }}</span> <sup>by Spythere</sup>
-      </div>
-      <button v-else class="back-btn btn--text" @click="selectedStation = null">&lt; powrót</button>
+      </router-link>
+      <!-- <button v-else class="back-btn btn--text" @click="selectedStation = null">&lt; powrót</button> -->
     </nav>
 
     <main>
-      <div class="scenery-selector" v-if="!selectedStation">
-        <h1>Scenerie <span class="text--accent">online</span></h1>
-
-        <ul class="scenery-list">
-          <li v-for="(station, i) in onlineStations">
-            <span v-if="i > 0">&bull;</span>
-            <button class="btn--text" @click="handleClick(station)">
-              {{ station.stationName }}
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <PragotronVue v-else />
+      <router-view v-slot="{ Component }">
+        <keep-alive>
+          <component :is="Component" :key="$route.path"></component>
+        </keep-alive>
+      </router-view>
     </main>
   </div>
 </template>
 
 <script lang="ts">
-import { provide, Ref, ref } from 'vue';
 import { defineComponent } from '@vue/runtime-core';
-import PragotronVue from './components/Pragotron.vue';
-import IStationData from './types/IStationData';
-import { ISceneryResponse } from './types/ISceneryReponse';
-import { IOnlineStationsResponse } from './types/IOnlineStationsResponse';
+import PragotronVue from './views/PragotronView.vue';
+import IStationData from './types/ISceneryData';
 
 import packageInfo from '../package.json';
 
 export default defineComponent({
   components: {
     PragotronVue,
-  },
-
-  setup() {
-    const mockStation: IStationData = {
-      stationName: 'Czermin',
-      nameAbbreviation: '',
-      stationCheckpoints: [],
-    };
-
-    const selectedStation = ref(null) as Ref<null | IStationData>;
-
-    provide('selectedStation', selectedStation);
-
-    return {
-      selectedStation,
-    };
   },
 
   data: () => ({
@@ -65,46 +37,7 @@ export default defineComponent({
   }),
 
   async mounted() {
-    const stationDataArray: ISceneryResponse[] = await (
-      await fetch(`${import.meta.env.VITE_STACJOWNIK_API_URL}/api/getSceneries`)
-    ).json();
-
-    const stationDataJSON = stationDataArray.map((stationData) => ({
-      stationName: stationData.name,
-      stationCheckpoints: stationData.checkpoints?.length > 0 ? stationData.checkpoints.split(';') : [stationData.name],
-      nameAbbreviation: '',
-    }));
-
-    const stationsAPIResponse: IOnlineStationsResponse = await (
-      await fetch('https://api.td2.info.pl:9640/?method=getStationsOnline')
-    ).json();
-
-    this.onlineStations = stationsAPIResponse.message
-      .reduce((acc, station) => {
-        if (station.region != 'eu') return acc;
-        if (!station.isOnline) return acc;
-
-        const savedStationData = stationDataJSON.find((data) => data.stationName == station.stationName);
-
-        if (savedStationData) acc.push(savedStationData);
-        else
-          acc.push({
-            stationName: station.stationName,
-            nameAbbreviation: '',
-            stationCheckpoints: [],
-          });
-
-        return acc;
-      }, [] as IStationData[])
-      .sort((s1, s2) => (s1.stationName > s2.stationName ? 1 : -1));
-
     this.dataLoaded = true;
-  },
-
-  methods: {
-    handleClick(station: IStationData) {
-      this.selectedStation = station;
-    },
   },
 });
 </script>
@@ -150,16 +83,9 @@ main {
   align-items: center;
 }
 
-ul.scenery-list {
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-
-  padding: 1em;
-  margin: 0 auto;
-
-  font-size: 1.3em;
-  max-width: 1000px;
+a {
+  text-decoration: none;
+  color: white;
 }
 </style>
 

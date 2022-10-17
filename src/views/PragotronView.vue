@@ -116,7 +116,7 @@ const departureInfoEmptyObj: ITableRow = {
   trainNumber: '',
 
   date: new Date(0),
-  dateDigits: [' ', ' ', ' ', ' '],
+  dateDigits: ['', '', '', ''],
 
   arrivalTimestamp: 0,
   departureTimestamp: 0,
@@ -125,14 +125,12 @@ const departureInfoEmptyObj: ITableRow = {
   delayMinutes: 0,
 
   tableValues: {
-    routeTo: ' ',
-    routeVia: ' ',
+    routeTo: '',
+    routeVia: '',
 
-    currentRouteToIndex: 0,
-    currentRouteViaIndex: 0,
-    currentDateDigitIndex: 0,
+    currentRowIndexes: [0, 0, 0, 0, 0, 0],
 
-    dateDigits: [' ', ' ', ' ', ' '],
+    dateDigits: ['', '', '', ''],
   },
 };
 
@@ -153,14 +151,14 @@ export default defineComponent({
 
     apiTrainData: [] as ITrainResponse[],
 
-    animationFrameIndex: 0,
+    isAnimationRunning: true,
     intervalIndex: 0,
 
     lastRefreshTime: 0,
 
     departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
-    dateDigits: [' ', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    dateDigits: ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
 
     currentRouteIndex: 0,
     currentDateDigitIndex: 0,
@@ -183,11 +181,13 @@ export default defineComponent({
       this.fetchDepartureList();
     }, 30000);
 
-    this.animationFrameIndex = requestAnimationFrame(this.update);
+    this.isAnimationRunning = true;
+    requestAnimationFrame(this.update);
   },
 
   deactivated() {
-    cancelAnimationFrame(this.animationFrameIndex);
+    this.isAnimationRunning = false;
+
     clearInterval(this.intervalIndex);
   },
 
@@ -226,7 +226,7 @@ export default defineComponent({
           const date = departureLine ? new Date(departureTimestamp) : new Date(arrivalTimestamp);
 
           // [HH, MM, SS] - nienawidzę dat w JavaScripcie
-          const dateArray = date.toLocaleString('pl-PL').split(', ')[1].split(':') || [' ', ' ', ' ', ' '];
+          const dateArray = date.toLocaleString('pl-PL').split(', ')[1].split(':') || ['', '', '', ''];
 
           // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
           const dateDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
@@ -249,10 +249,8 @@ export default defineComponent({
             tableValues: {
               routeTo: '',
               routeVia: '',
-              dateDigits: [' ', ' ', ' ', ' '],
-              currentRouteToIndex: 0,
-              currentRouteViaIndex: 0,
-              currentDateDigitIndex: 0,
+              dateDigits: ['', '', '', ''],
+              currentRowIndexes: [0, 0, 0, 0, 0, 0],
             },
           });
 
@@ -288,7 +286,7 @@ export default defineComponent({
             trainNumber: '',
 
             date: new Date(0),
-            dateDigits: [' ', ' ', ' ', ' '],
+            dateDigits: ['', '', '', ''],
 
             arrivalTimestamp: 0,
             departureTimestamp: 0,
@@ -326,6 +324,8 @@ export default defineComponent({
     },
 
     update(time: number) {
+      if (!this.isAnimationRunning) return;
+
       if (time >= this.lastRefreshTime + 125) {
         this.updateTableRows();
 
@@ -342,25 +342,26 @@ export default defineComponent({
     updateTableRows() {
       this.departureTable.forEach((dep, i) => {
         if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
-          dep.tableValues.routeTo = this.departureRoutes[dep.tableValues.currentRouteToIndex];
+          dep.tableValues.routeTo = this.departureRoutes[dep.tableValues.currentRowIndexes[0]];
 
-          dep.tableValues.currentRouteToIndex = (dep.tableValues.currentRouteToIndex + 1) % this.departureRoutes.length;
+          dep.tableValues.currentRowIndexes[0] =
+            (dep.tableValues.currentRowIndexes[0] + 1) % this.departureRoutes.length;
         }
 
         if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
-          dep.tableValues.routeVia = this.departureRoutes[dep.tableValues.currentRouteViaIndex];
+          dep.tableValues.routeVia = this.departureRoutes[dep.tableValues.currentRowIndexes[1]];
 
-          dep.tableValues.currentRouteViaIndex =
-            (dep.tableValues.currentRouteViaIndex + 1) % this.departureRoutes.length;
+          dep.tableValues.currentRowIndexes[1] =
+            (dep.tableValues.currentRowIndexes[1] + 1) % this.departureRoutes.length;
         }
 
         dep.tableValues.dateDigits.forEach((digit, j) => {
-          if (dep.dateDigits[j] != digit)
-            dep.tableValues.dateDigits[j] = this.dateDigits[dep.tableValues.currentDateDigitIndex];
+          if (dep.dateDigits[j] != digit) {
+            dep.tableValues.dateDigits[j] = this.dateDigits[dep.tableValues.currentRowIndexes[j + 2]];
+            dep.tableValues.currentRowIndexes[j + 2] =
+              (dep.tableValues.currentRowIndexes[j + 2] + 1) % this.dateDigits.length;
+          }
         });
-
-        // Poprawić do wszystkich
-        dep.tableValues.currentDateDigitIndex = (dep.tableValues.currentDateDigitIndex + 1) % this.dateDigits.length;
       });
     },
 

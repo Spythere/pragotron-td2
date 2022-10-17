@@ -2,9 +2,8 @@ interface ITableRowValues {
     routeTo: string;
     routeVia: string;
 
-    currentRouteToIndex: number;
-    currentRouteViaIndex: number;
-    currentDateDigitIndex: number;
+    // routeTo, routeVia, date1, date2, date3, date4
+    currentRowIndexes: [number, number, number, number, number, number];
 
     dateDigits: string[],
 }

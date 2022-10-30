@@ -313,6 +313,8 @@ export default defineComponent({
           stationData.checkpoints?.length > 0 ? stationData.checkpoints.split(';') : [stationData.name],
         nameAbbreviation: '',
       }));
+
+
     },
 
     selectDefaultCheckpoint() {
@@ -373,6 +375,7 @@ export default defineComponent({
         // this.departureRoutes.push(randRoute);
       }
 
+
       this.departureRoutes.sort(() => Math.random() - 0.5);
     },
 
@@ -395,7 +398,7 @@ export default defineComponent({
 .slot-anim {
   &-enter-active,
   &-leave-active {
-    transition: all 50ms ease-in-out;
+    transition: all 75ms ease;
   }
 
   &-enter-from,

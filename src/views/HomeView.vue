@@ -1,9 +1,10 @@
 <template>
   <div class="home-view">
     <div class="scenery-selector">
-      <h1>Scenerie <span class="text--accent">online</span></h1>
+      <h1 style="margin: 0">Wybierz scenerię, aby otworzyć widok pragotronu</h1>
+      <p style="margin: 0.5em; color: #ccc;">Widoczne są jedynie scenerie aktywne na serwerze PL1</p>
 
-      <ul class="scenery-list" v-if="dataLoaded">
+      <ul class="scenery-list" v-if="dataLoaded && onlineStations.length > 0">
         <li v-for="(stationName, i) in onlineStations">
           <span v-if="i > 0">&bull;</span>
           <button class="btn--text" @click="handleClick(stationName)">
@@ -12,7 +13,8 @@
         </li>
       </ul>
 
-      <div v-else>Ładowanie listy aktywnych scenerii...</div>
+      <h3 v-else-if="onlineStations.length == 0">Brak aktywnych scenerii</h3>
+      <h3 v-else>Ładowanie listy aktywnych scenerii...</h3>
     </div>
   </div>
 </template>

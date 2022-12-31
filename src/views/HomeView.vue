@@ -33,7 +33,7 @@ export default defineComponent({
 
   async mounted() {
     const stationsAPIResponse: IOnlineStationsResponse = await (
-      await fetch('https://api.td2.info.pl:9640/?method=getStationsOnline')
+      await fetch('https://api.td2.info.pl/?method=getStationsOnline')
     ).json();
 
     this.dataLoaded = true;

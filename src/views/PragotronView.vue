@@ -1,5 +1,5 @@
 <template>
-  <div class="pragotron">
+  <div class="pragotron" ref="pragotron">
     <div class="pragotron_content">
       <div class="filters">
         <div>
@@ -170,6 +170,16 @@ export default defineComponent({
   async created() {
     await this.fetchSceneryInfo();
     this.selectDefaultCheckpoint();
+
+    window.addEventListener('resize', (e) => {
+      const elRef = this.$refs['pragotron'] as HTMLElement;
+      if (!elRef) return;
+
+      const scale = Math.min(window.innerWidth / elRef.clientWidth, window.innerHeight / elRef.clientHeight);
+      if (scale > 1) return;
+
+      elRef.style.transform = `scale(${scale})`;
+    });
   },
 
   activated() {
@@ -419,6 +429,10 @@ export default defineComponent({
 }
 
 /* ************** */
+
+.pragotron {
+  padding: 1em;
+}
 
 .filters {
   display: flex;

@@ -158,7 +158,7 @@ export default defineComponent({
 
     departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
-    dateDigits: ['', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
+    dateDigits: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ''],
 
     currentRouteIndex: 0,
     currentDateDigitIndex: 0,
@@ -198,7 +198,7 @@ export default defineComponent({
 
     filledTable() {
       const filteredData = this.apiTrainData
-        .reduce((list, train) => {
+        .reduce((list, train, i) => {
           if (!train.timetable) return list;
 
           const timetable = train.timetable;
@@ -274,7 +274,9 @@ export default defineComponent({
           this.departureTable[i] = { ...updateInfo };
           this.departureTable[i].tableValues.routeTo = existingInfo.routeTo;
           this.departureTable[i].tableValues.routeVia = existingInfo.routeVia;
+          // this.departureTable[i].dateDigits = [...existingInfo.tableValues.dateDigits];
           this.departureTable[i].tableValues.dateDigits = [...existingInfo.tableValues.dateDigits];
+          this.departureTable[i].tableValues.currentRowIndexes = [...existingInfo.tableValues.currentRowIndexes];
         } else {
           this.departureTable[i] = {
             ...this.departureTable[i],
@@ -313,8 +315,6 @@ export default defineComponent({
           stationData.checkpoints?.length > 0 ? stationData.checkpoints.split(';') : [stationData.name],
         nameAbbreviation: '',
       }));
-
-
     },
 
     selectDefaultCheckpoint() {
@@ -322,13 +322,13 @@ export default defineComponent({
     },
 
     abbrevStationName(name: string) {
-      return (name in stationAbbrevs ? stationAbbrevs[name] : name).toUpperCase();
+      return (stationAbbrevs[name] || name).toUpperCase();
     },
 
     update(time: number) {
       if (!this.isAnimationRunning) return;
 
-      if (time >= this.lastRefreshTime + 125) {
+      if (time >= this.lastRefreshTime + 160) {
         this.updateTableRows();
 
         this.currentRouteIndex = (this.currentRouteIndex + 1) % this.departureRoutes.length;
@@ -375,7 +375,6 @@ export default defineComponent({
         // this.departureRoutes.push(randRoute);
       }
 
-
       this.departureRoutes.sort(() => Math.random() - 0.5);
     },
 
@@ -398,12 +397,12 @@ export default defineComponent({
 .slot-anim {
   &-enter-active,
   &-leave-active {
-    transition: all 75ms ease;
+    transition: all 80ms;
   }
 
   &-enter-from,
   &-leave-to {
-    transform: rotateX(90deg) perspective(200px);
+    transform: rotateX(90deg) perspective(300px);
   }
 }
 
@@ -511,5 +510,7 @@ export default defineComponent({
   width: 100%;
   height: 2em;
   line-height: 2em;
+
+  will-change: contents;
 }
 </style>

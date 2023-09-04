@@ -2,7 +2,7 @@
   <div class="home-view">
     <div class="scenery-selector">
       <h1 style="margin: 0">Wybierz scenerię, aby otworzyć widok pragotronu</h1>
-      <p style="margin: 0.5em; color: #ccc;">Widoczne są jedynie scenerie aktywne na serwerze PL1</p>
+      <p style="margin: 0.5em; color: #ccc">Widoczne są jedynie scenerie aktywne na serwerze PL1</p>
 
       <ul class="scenery-list" v-if="dataLoaded && onlineStations.length > 0">
         <li v-for="(stationName, i) in onlineStations">
@@ -52,7 +52,7 @@ export default defineComponent({
 
   methods: {
     handleClick(stationName: string) {
-      this.$router.push(`/board?name=${stationName.replace(/ /g, '_')}`);
+      this.$router.push(`/board?name=${stationName}`);
       // this.selectedStation = station;
     },
   },
@@ -72,3 +72,4 @@ ul.scenery-list {
   max-width: 1000px;
 }
 </style>
+

@@ -163,6 +163,8 @@ export default defineComponent({
     currentRouteIndex: 0,
     currentDateDigitIndex: 0,
 
+    currentRowAnimating: 0,
+
     stationAbbrevs: stationAbbrevs as { [key: string]: string },
     selectedCheckpointName: '',
   }),
@@ -171,18 +173,14 @@ export default defineComponent({
     await this.fetchSceneryInfo();
     this.selectDefaultCheckpoint();
 
-    window.addEventListener('resize', (e) => {
-      const elRef = this.$refs['pragotron'] as HTMLElement;
-      if (!elRef) return;
-
-      const scale = Math.min(window.innerWidth / elRef.clientWidth, window.innerHeight / elRef.clientHeight);
-      if (scale > 1) return;
-
-      elRef.style.transform = `scale(${scale})`;
+    window.addEventListener('resize', () => {
+      this.resizeTable();
     });
   },
 
   activated() {
+    this.resizeTable();
+
     this.selectDefaultCheckpoint();
     this.shuffleRoutes();
     this.fetchDepartureList();
@@ -327,6 +325,15 @@ export default defineComponent({
       }));
     },
 
+    resizeTable() {
+      const elRef = this.$refs['pragotron'] as HTMLElement;
+      if (!elRef) return;
+
+      const scale = Math.min(window.innerWidth / elRef.clientWidth, window.innerHeight / elRef.clientHeight, 1);
+
+      elRef.style.transform = `scale(${scale})`;
+    },
+
     selectDefaultCheckpoint() {
       this.selectedCheckpointName = this.selectedStation?.stationCheckpoints[0] || this.stationName;
     },
@@ -352,7 +359,15 @@ export default defineComponent({
     // d = 0 -> time = time
     // d = time -> time2 = time2-time
     updateTableRows() {
-      this.departureTable.forEach((dep, i) => {
+      // const isAnimating =
+      //   dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase() ||
+      //   dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase() ||
+      //   !dep.tableValues.dateDigits.every((dd, i) => dd == dep.dateDigits[i]);
+      // console.log(isAnimating);
+
+      for (let i = 0; i < this.departureTable.length; i++) {
+        const dep = this.departureTable[i];
+
         if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
           dep.tableValues.routeTo = this.departureRoutes[dep.tableValues.currentRowIndexes[0]];
 
@@ -374,15 +389,13 @@ export default defineComponent({
               (dep.tableValues.currentRowIndexes[j + 2] + 1) % this.dateDigits.length;
           }
         });
-      });
+      }
     },
 
     shuffleRoutes() {
       for (let i = 0; i < 25; i++) {
         const randIndex = Math.floor(Math.random() * routeValues.length);
         const randRoute = routeValues[randIndex];
-
-        // this.departureRoutes.push(randRoute);
       }
 
       this.departureRoutes.sort(() => Math.random() - 0.5);
@@ -432,6 +445,7 @@ export default defineComponent({
 
 .pragotron {
   padding: 1em;
+  will-change: transform;
 }
 
 .filters {

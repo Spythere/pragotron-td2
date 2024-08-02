@@ -3,7 +3,7 @@
     <Navbar :version="version" />
 
     <main>
-      <button @click="testAudio">test audio</button>
+      <!-- <button @click="testAudio">test audio</button> -->
       <router-view v-slot="{ Component }">
         <keep-alive>
           <component :is="Component" :key="$route.path"></component>

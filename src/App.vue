@@ -1,13 +1,9 @@
 <template>
   <div class="app_content">
-    <nav class="navbar">
-      <router-link to="/">
-        Pragotron TD2 <span class="text--accent">v{{ VERSION }}</span> <sup>by Spythere</sup>
-      </router-link>
-      <!-- <button v-else class="back-btn btn--text" @click="selectedStation = null">&lt; powrót</button> -->
-    </nav>
+    <Navbar :version="version" />
 
     <main>
+      <button @click="testAudio">test audio</button>
       <router-view v-slot="{ Component }">
         <keep-alive>
           <component :is="Component" :key="$route.path"></component>
@@ -18,27 +14,37 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from '@vue/runtime-core';
-import PragotronVue from './views/PragotronView.vue';
-import IStationData from './types/ISceneryData';
+import { defineComponent } from 'vue';
 
 import packageInfo from '../package.json';
+import { useApiStore } from './stores/apiStore';
+import Navbar from './components/Navbar.vue';
 
 export default defineComponent({
-  components: {
-    PragotronVue,
-  },
+  components: { Navbar },
 
   data: () => ({
-    onlineStations: [] as IStationData[],
-    dataLoaded: false,
-
-    VERSION: packageInfo.version,
+    version: packageInfo.version,
+    apiStore: useApiStore()
   }),
 
   async mounted() {
-    this.dataLoaded = true;
+    this.apiStore.fetchSceneriesData();
+
+    this.apiStore.fetchActiveData();
+
+    setInterval(() => {
+      this.apiStore.fetchActiveData();
+    }, 30000);
   },
+
+  methods: {
+    testAudio() {
+      const audio = new Audio('../public/pragotron.mp3');
+      audio.play();
+      audio.loop = true;
+    }
+  }
 });
 </script>
 
@@ -48,45 +54,24 @@ export default defineComponent({
 .app_content {
   text-align: center;
 
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto 1fr;
 
   min-height: 100vh;
   overflow-x: hidden;
 }
 
-nav {
-  flex: 0 1 40px;
-  font-size: 1.35em;
-
-  padding: 0.25em;
-
-  display: flex;
-  align-items: center;
-
-  background-color: $accentBg;
-
-  sup {
-    font-size: 0.8em;
-    color: $dimmedText;
-  }
-
-  button {
-    padding: 0;
-  }
-}
-
 main {
-  flex: 1 1 auto;
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  padding: 1em;
+  overflow-x: hidden;
 }
 
 a {
   text-decoration: none;
   color: white;
+
+  a:hover {
+    color: gold;
+  }
 }
 </style>
-

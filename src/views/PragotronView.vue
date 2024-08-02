@@ -1,30 +1,10 @@
 <template>
-  <div class="pragotron" ref="pragotron">
+  <div class="pragotron">
     <div class="pragotron_content">
-      <div class="filters">
-        <div>
-          <label>
-            <input type="checkbox" v-model="includeNonPassenger" />
-            Relacje niepasażerskie
-          </label>
-          <label>
-            <input type="checkbox" v-model="includeArrivals" />
-            Relacje kończące bieg
-          </label>
-        </div>
-        <div>
-          <label for="checkpoint">
-            Posterunek:
-            <select id="checkpoint" v-model="selectedCheckpointName">
-              <option v-for="cp in selectedStation?.stationCheckpoints" :value="cp">{{ cp }}</option>
-            </select>
-          </label>
-        </div>
-      </div>
-      <div class="wrapper">
+      <div class="wrapper" ref="pragotron">
         <div class="top-pane">
           <span class="title">
-            <div>{{ selectedCheckpointName.toUpperCase() }}</div>
+            <div>{{ mainStore.selectedCheckpointName.toUpperCase() }}</div>
           </span>
           <div class="headers">
             <span>GODZ.</span>
@@ -35,7 +15,7 @@
           </div>
         </div>
         <div class="table">
-          <div class="row" v-for="(departure, i) in filledTable" :key="i">
+          <div class="row" v-for="(departure, i) in departureTable" :key="i">
             <div class="row-content">
               <span class="departure-date">
                 <transition name="slot-anim" mode="out-in">
@@ -62,7 +42,9 @@
               </span>
               <span class="train-class">
                 <transition name="slot-anim" mode="out-in">
-                  <div class="slider-slot" :key="departure.trainNumber">{{ departure.trainNumber }}</div>
+                  <div class="slider-slot" :key="departure.trainNumber">
+                    {{ departure.trainNumber }}
+                  </div>
                 </transition>
               </span>
               <span class="route-via">
@@ -97,15 +79,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import stationAbbrevsJSON from '../data/stationAbbrevs.json';
-import routeValues from '../data/routeValues.json';
-
-import { ITimetableStop, ITrainResponse } from '../types/ITrainResponse';
 import { ITableRow } from '../types/ITableRow';
-import { ISceneryResponse } from '../types/ISceneryReponse';
-import ISceneryData from '../types/ISceneryData';
-
-const stationAbbrevs: { [key: string]: string } = stationAbbrevsJSON;
+import { useMainStore } from '../stores/mainStore';
+import { useApiStore } from '../stores/apiStore';
 
 const departureInfoEmptyObj: ITableRow = {
   timetableId: -1,
@@ -130,29 +106,32 @@ const departureInfoEmptyObj: ITableRow = {
 
     currentRowIndexes: [0, 0, 0, 0, 0, 0],
 
-    dateDigits: ['', '', '', ''],
-  },
+    dateDigits: ['', '', '', '']
+  }
 };
 
 export default defineComponent({
   props: {
     stationName: {
       type: String,
-      required: true,
+      required: true
     },
+
+    region: {
+      type: String,
+      default: 'pl1'
+    }
   },
 
   data: () => ({
-    currentStationName: '',
-    sceneriesInfo: [] as ISceneryData[],
+    mainStore: useMainStore(),
+    apiStore: useApiStore(),
 
     includeNonPassenger: true,
     includeArrivals: true,
 
-    apiTrainData: [] as ITrainResponse[],
-
     isAnimationRunning: true,
-    intervalIndex: 0,
+    // intervalIndex: 0,
 
     lastRefreshTime: 0,
 
@@ -163,15 +142,11 @@ export default defineComponent({
     currentRouteIndex: 0,
     currentDateDigitIndex: 0,
 
-    currentRowAnimating: 0,
-
-    stationAbbrevs: stationAbbrevs as { [key: string]: string },
-    selectedCheckpointName: '',
+    currentRowAnimating: 0
   }),
 
   async created() {
-    await this.fetchSceneryInfo();
-    this.selectDefaultCheckpoint();
+    // this.selectDefaultCheckpoint();
 
     window.addEventListener('resize', () => {
       this.resizeTable();
@@ -179,15 +154,12 @@ export default defineComponent({
   },
 
   activated() {
+    this.mainStore.selectedStationName = this.stationName;
+
     this.resizeTable();
 
     this.selectDefaultCheckpoint();
     this.shuffleRoutes();
-    this.fetchDepartureList();
-
-    this.intervalIndex = setInterval(() => {
-      this.fetchDepartureList();
-    }, 30000);
 
     this.isAnimationRunning = true;
     requestAnimationFrame(this.update);
@@ -195,24 +167,69 @@ export default defineComponent({
 
   deactivated() {
     this.isAnimationRunning = false;
+  },
 
-    clearInterval(this.intervalIndex);
+  watch: {
+    filledTable: {
+      deep: true,
+      handler(value) {
+        for (let i = 0; i < this.departureTable.length; i++) {
+          if (i <= value.length - 1) {
+            const updateInfo = value[i];
+            const existingInfo = this.departureTable[i];
+
+            this.departureTable[i] = { ...updateInfo };
+            this.departureTable[i].tableValues.routeTo = existingInfo.routeTo;
+            this.departureTable[i].tableValues.routeVia = existingInfo.routeVia;
+            // this.departureTable[i].dateDigits = [...existingInfo.tableValues.dateDigits];
+            this.departureTable[i].tableValues.dateDigits = [
+              ...existingInfo.tableValues.dateDigits
+            ];
+            this.departureTable[i].tableValues.currentRowIndexes = [
+              ...existingInfo.tableValues.currentRowIndexes
+            ];
+          } else {
+            this.departureTable[i] = {
+              ...this.departureTable[i],
+              timetableId: -1,
+
+              routeTo: '',
+              routeVia: '',
+
+              trainNumber: '',
+
+              date: new Date(0),
+              dateDigits: ['', '', '', ''],
+
+              arrivalTimestamp: 0,
+              departureTimestamp: 0,
+              checkpointName: '',
+
+              delayMinutes: 0
+            };
+          }
+        }
+      }
+    },
+
+    'apiStore.activeData'(_val, prevVal) {
+      if (prevVal == undefined) {
+        this.selectDefaultCheckpoint();
+      }
+    }
   },
 
   computed: {
-    selectedStation() {
-      return this.sceneriesInfo.find(({ stationName }) => stationName == this.stationName.replace(/_/g, ' '));
-    },
-
     filledTable() {
-      const filteredData = this.apiTrainData
-        .reduce((list, train, i) => {
+      const filteredData = this.apiStore.activeData?.trains
+        .reduce((list, train) => {
           if (!train.timetable) return list;
 
           const timetable = train.timetable;
 
-          const stopInfo: ITimetableStop | undefined = timetable.stopList.find(
-            (sp) => sp.stopNameRAW.toLowerCase() == this.selectedCheckpointName.toLowerCase()
+          const stopInfo = timetable.stopList.find(
+            (sp) =>
+              sp.stopNameRAW.toLowerCase() == this.mainStore.selectedCheckpointName.toLowerCase()
           );
 
           if (!stopInfo || stopInfo.confirmed) return list;
@@ -234,7 +251,12 @@ export default defineComponent({
           const date = departureLine ? new Date(departureTimestamp) : new Date(arrivalTimestamp);
 
           // [HH, MM, SS] - nienawidzę dat w JavaScripcie
-          const dateArray = date.toLocaleString('pl-PL').split(', ')[1].split(':') || ['', '', '', ''];
+          const dateArray = date.toLocaleString('pl-PL').split(', ')[1].split(':') || [
+            '',
+            '',
+            '',
+            ''
+          ];
 
           // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
           const dateDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
@@ -249,7 +271,7 @@ export default defineComponent({
             date,
             dateDigits,
             delayMinutes: departureDelay,
-            checkpointName: this.selectedCheckpointName.toLowerCase(),
+            checkpointName: this.mainStore.selectedCheckpointName.toLowerCase(),
 
             arrivalTimestamp,
             departureTimestamp,
@@ -258,8 +280,8 @@ export default defineComponent({
               routeTo: '',
               routeVia: '',
               dateDigits: ['', '', '', ''],
-              currentRowIndexes: [0, 0, 0, 0, 0, 0],
-            },
+              currentRowIndexes: [0, 0, 0, 0, 0, 0]
+            }
           });
 
           if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
@@ -269,77 +291,40 @@ export default defineComponent({
         }, [] as ITableRow[])
         .filter(
           (dep) =>
-            (this.includeNonPassenger || !/^[T|L|Z|P]/g.test(dep.trainNumber)) &&
-            (this.includeArrivals || dep.departureTimestamp)
+            (this.mainStore.filters.nonPassenger || !/^[T|L|Z|P]/g.test(dep.trainNumber)) &&
+            (this.mainStore.filters.terminating || dep.departureTimestamp)
         )
         .sort((dep1, dep2) => (dep1.date?.getTime() || 0) - (dep2.date?.getTime() || 0));
 
-      for (let i = 0; i < this.departureTable.length; i++) {
-        if (i <= filteredData.length - 1) {
-          const updateInfo = filteredData[i];
-          const existingInfo = this.departureTable[i];
-
-          this.departureTable[i] = { ...updateInfo };
-          this.departureTable[i].tableValues.routeTo = existingInfo.routeTo;
-          this.departureTable[i].tableValues.routeVia = existingInfo.routeVia;
-          // this.departureTable[i].dateDigits = [...existingInfo.tableValues.dateDigits];
-          this.departureTable[i].tableValues.dateDigits = [...existingInfo.tableValues.dateDigits];
-          this.departureTable[i].tableValues.currentRowIndexes = [...existingInfo.tableValues.currentRowIndexes];
-        } else {
-          this.departureTable[i] = {
-            ...this.departureTable[i],
-            timetableId: -1,
-
-            routeTo: '',
-            routeVia: '',
-
-            trainNumber: '',
-
-            date: new Date(0),
-            dateDigits: ['', '', '', ''],
-
-            arrivalTimestamp: 0,
-            departureTimestamp: 0,
-            checkpointName: '',
-
-            delayMinutes: 0,
-          };
-        }
-      }
-
-      return this.departureTable;
-    },
+      return filteredData;
+    }
   },
 
   methods: {
-    async fetchSceneryInfo() {
-      const sceneryInfoRes: ISceneryResponse[] = await (
-        await fetch(`${import.meta.env.VITE_STACJOWNIK_API_URL}/api/getSceneries`)
-      ).json();
-
-      this.sceneriesInfo = sceneryInfoRes.map((stationData) => ({
-        stationName: stationData.name,
-        stationCheckpoints:
-          stationData.checkpoints?.length > 0 ? stationData.checkpoints.split(';') : [stationData.name],
-        nameAbbreviation: '',
-      }));
-    },
-
     resizeTable() {
       const elRef = this.$refs['pragotron'] as HTMLElement;
       if (!elRef) return;
 
-      const scale = Math.min(window.innerWidth / elRef.clientWidth, window.innerHeight / elRef.clientHeight, 1);
+      const scale = Math.min(
+        window.innerWidth / elRef.clientWidth,
+        window.innerHeight / elRef.clientHeight,
+        1
+      );
+
+      // elRef.style.width = `${window.innerWidth - 10}px`;
+      // elRef.style.height = `${(window.innerWidth - 10) / 2}px`;
 
       elRef.style.transform = `scale(${scale})`;
     },
 
     selectDefaultCheckpoint() {
-      this.selectedCheckpointName = this.selectedStation?.stationCheckpoints[0] || this.stationName;
+      this.mainStore.selectedCheckpointName =
+        this.mainStore.selectedStation?.stationCheckpoints[0] || this.stationName;
     },
 
     abbrevStationName(name: string) {
-      return (stationAbbrevs[name] || name).toUpperCase();
+      // return (stationAbbrevs[name] || name).toUpperCase();
+      return name.toUpperCase();
     },
 
     update(time: number) {
@@ -356,15 +341,7 @@ export default defineComponent({
       requestAnimationFrame(this.update);
     },
 
-    // d = 0 -> time = time
-    // d = time -> time2 = time2-time
     updateTableRows() {
-      // const isAnimating =
-      //   dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase() ||
-      //   dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase() ||
-      //   !dep.tableValues.dateDigits.every((dd, i) => dd == dep.dateDigits[i]);
-      // console.log(isAnimating);
-
       for (let i = 0; i < this.departureTable.length; i++) {
         const dep = this.departureTable[i];
 
@@ -384,7 +361,8 @@ export default defineComponent({
 
         dep.tableValues.dateDigits.forEach((digit, j) => {
           if (dep.dateDigits[j] != digit) {
-            dep.tableValues.dateDigits[j] = this.dateDigits[dep.tableValues.currentRowIndexes[j + 2]];
+            dep.tableValues.dateDigits[j] =
+              this.dateDigits[dep.tableValues.currentRowIndexes[j + 2]];
             dep.tableValues.currentRowIndexes[j + 2] =
               (dep.tableValues.currentRowIndexes[j + 2] + 1) % this.dateDigits.length;
           }
@@ -393,24 +371,9 @@ export default defineComponent({
     },
 
     shuffleRoutes() {
-      for (let i = 0; i < 25; i++) {
-        const randIndex = Math.floor(Math.random() * routeValues.length);
-        const randRoute = routeValues[randIndex];
-      }
-
       this.departureRoutes.sort(() => Math.random() - 0.5);
-    },
-
-    async fetchDepartureList() {
-      const trainsAPIResponse: ITrainResponse[] = await (
-        await fetch(`${import.meta.env.VITE_STACJOWNIK_API_URL}/api/getActiveTrainList`)
-      ).json();
-
-      if (!trainsAPIResponse) return;
-
-      this.apiTrainData = trainsAPIResponse;
-    },
-  },
+    }
+  }
 });
 </script>
 
@@ -443,24 +406,28 @@ export default defineComponent({
 
 /* ************** */
 
-.pragotron {
-  padding: 1em;
-  will-change: transform;
-}
-
-.filters {
+.pragotron_content {
   display: flex;
-  justify-content: space-between;
-  padding: 0.25em 0;
-  gap: 0.5em;
+  justify-content: center;
+  padding: 1em;
 }
 
 .wrapper {
-  width: 1200px;
-  height: 650px;
-
   display: flex;
   flex-direction: column;
+  min-width: 1400px;
+  min-height: 700px;
+  padding: 2em;
+
+  transform-origin: top;
+}
+
+.top-pane > .headers,
+.row-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr 2fr 1fr;
+  gap: 0 10px;
+  padding: 0 10px;
 }
 
 .top-pane {
@@ -479,11 +446,6 @@ export default defineComponent({
   }
 
   .headers {
-    display: grid;
-    grid-template-columns: 1fr 1fr 2fr 2fr 1fr;
-    gap: 0 10px;
-    padding: 0 10px;
-
     text-align: center;
 
     font-size: 1.35em;
@@ -501,16 +463,11 @@ export default defineComponent({
 
 .row {
   &-content {
-    display: grid;
-    grid-template-columns: 1fr 1fr 2fr 2fr 1fr;
-    gap: 0 10px;
-    padding: 0 10px;
-
     height: 100%;
 
     align-items: center;
     color: white;
-    font-size: 1.2em;
+    font-size: 1.3em;
 
     background: #1a1a1a;
 

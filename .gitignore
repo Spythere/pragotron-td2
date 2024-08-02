@@ -26,3 +26,4 @@ dist-ssr
 .firebase
 
 mockData/
+.env

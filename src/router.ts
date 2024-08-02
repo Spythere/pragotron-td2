@@ -6,18 +6,18 @@ import PragotronView from './views/PragotronView.vue';
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    component: HomeView,
+    component: HomeView
   },
   {
     path: '/board',
     component: PragotronView,
-    props: (route) => ({ stationName: route.query.name }),
-  },
+    props: (route) => ({ stationName: route.query.name, region: route.query.region })
+  }
 ];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes,
+  routes
 });
 
 export default router;

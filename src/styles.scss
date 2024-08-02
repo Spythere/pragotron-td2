@@ -1,16 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Monda:wght@400;700&display=swap');
 @import 'theme.scss';
 
-
 body,
 html {
   background: $primaryBg;
   min-height: 100vh;
   color: $primaryText;
 
-
   padding: 0;
   margin: 0;
+
+  font-size: 16px;
 }
 
 *,
@@ -19,22 +19,82 @@ html {
   font-family: 'Monda', sans-serif;
 }
 
+input,
+select,
+option,
+label {
+  font-size: inherit;
+  font-family: inherit;
+}
+
 ul {
   list-style: none;
+  padding: 0;
 }
 
 button {
+  background: none;
+  border: none;
+  outline: none;
   cursor: pointer;
-  color: white;
   font-size: 1em;
 
-  &.btn--text {
-    background: none;
-    border: none;
-    outline: none;
+  color: white;
+  background-color: #1b1b1b;
+
+  &:hover {
+    background-color: #252525;
   }
 
   &:focus-visible {
     color: $accentText;
+  }
+
+  &.btn--image {
+    display: flex;
+    background: none;
+
+    img {
+      vertical-align: middle;
+    }
+
+    &:focus-visible {
+      outline: 1px solid $accentText;
+    }
+  }
+}
+
+// Input radio
+.g-selector {
+  label {
+    background-color: #202020;
+    cursor: pointer;
+
+    display: flex;
+    justify-content: center;
+
+    &:hover {
+      background-color: #2b2b2b;
+    }
+
+    span {
+      width: 100%;
+      padding: 0.25em 0.5em;
+    }
+
+    input[type='radio'] {
+      opacity: 0;
+      width: 1px;
+      height: 1px;
+      position: absolute;
+
+      &:checked + span {
+        color: $accentText;
+      }
+
+      &:focus-visible + span {
+        outline: 1px solid white;
+      }
+    }
   }
 }

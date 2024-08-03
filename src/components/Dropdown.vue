@@ -9,7 +9,15 @@
         <h3>Opcje</h3>
         <hr />
 
-        <div style="margin: 0.5em 0">
+        <div
+          style="
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.5em;
+            margin: 0.5em 0;
+          "
+        >
           <label>
             <input type="checkbox" v-model="store.filters.nonPassenger" />
             Relacje niepasażerskie
@@ -19,9 +27,14 @@
             <input type="checkbox" v-model="store.filters.terminating" />
             Relacje kończące bieg
           </label>
+
+          <label>
+            <input type="checkbox" v-model="store.filters.soundsEnabled" />
+            Dźwięki
+          </label>
         </div>
 
-        <div v-if="isPragotronOpen">
+        <div v-if="isPragotronOpen" style="margin: 0.5em 0">
           <label for="checkpoint">
             Posterunek:
             <select id="checkpoint" v-model="store.selectedCheckpointName">
@@ -51,6 +64,15 @@ export default defineComponent({
     isPragotronOpen() {
       return this.$route.path == '/board';
     }
+  },
+
+  watch: {
+    'store.filters': {
+      deep: true,
+      handler(filters: typeof this.store.filters) {
+        window.localStorage.setItem('settings', JSON.stringify(filters));
+      }
+    }
   }
 });
 </script>
@@ -64,7 +86,6 @@ h3 {
   font-size: 1.2em;
   margin: 0;
 }
-
 
 .dropdown-bg {
   position: fixed;

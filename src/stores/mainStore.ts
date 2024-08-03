@@ -25,7 +25,9 @@ export const useMainStore = defineStore('main', {
       optionsOpen: false,
       filters: {
         nonPassenger: true,
-        terminating: true
+        terminating: true,
+        timetableMode: 'departures' as 'departures' | 'arrivals',
+        soundsEnabled: false
       },
       selectedStationName: '',
       selectedCheckpointName: ''

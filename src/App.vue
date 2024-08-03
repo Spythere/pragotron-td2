@@ -19,23 +19,42 @@ import { defineComponent } from 'vue';
 import packageInfo from '../package.json';
 import { useApiStore } from './stores/apiStore';
 import Navbar from './components/Navbar.vue';
+import { useMainStore } from './stores/mainStore';
 
 export default defineComponent({
   components: { Navbar },
 
   data: () => ({
     version: packageInfo.version,
-    apiStore: useApiStore()
+    apiStore: useApiStore(),
+    mainStore: useMainStore()
   }),
 
-  async mounted() {
-    this.apiStore.fetchSceneriesData();
+  methods: {
+    loadLocalSettings() {
+      const settingsStorage = window.localStorage.getItem('settings');
 
+      if (settingsStorage != null) {
+        const settingsObj = JSON.parse(settingsStorage) as Record<string, any>;
+
+        Object.keys(settingsObj).forEach((key) => {
+          (this.mainStore.filters as any)[key] = settingsObj[key];
+        });
+      }
+    }
+  },
+
+  created() {
+    this.apiStore.fetchSceneriesData();
     this.apiStore.fetchActiveData();
 
+    this.loadLocalSettings();
+  },
+
+  mounted() {
     setInterval(() => {
       this.apiStore.fetchActiveData();
-    }, 30000);
+    }, 20000);
   }
 });
 </script>

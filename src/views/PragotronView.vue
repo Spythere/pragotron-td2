@@ -220,7 +220,10 @@ export default defineComponent({
     },
 
     animatingStatus(val: typeof this.animatingStatus) {
-      if (val == 'running') (this.$refs['audio'] as HTMLAudioElement).play();
+      if (val == 'running' && this.mainStore.filters.soundsEnabled)
+        (this.$refs['audio'] as HTMLAudioElement).play().catch((err) => {
+          console.error('Dźwięk nie mógł zostać odtworzony:', err);
+        });
       else {
         (this.$refs['audio'] as HTMLAudioElement).currentTime = 0;
         (this.$refs['audio'] as HTMLAudioElement).pause();

@@ -26,7 +26,7 @@
 
         <h3 v-else-if="sceneriesOnline.length == 0">Brak aktywnych scenerii</h3>
 
-        <ul v-else class="scenery-list">
+        <ul v-else class="scenery-list" :key="mainStore.region">
           <li v-for="station in sceneriesOnline" :key="station.stationName">
             <button @click="handleClick(station.stationName)">
               {{ station.stationName }}
@@ -99,7 +99,6 @@ export default defineComponent({
   grid-template-columns: repeat(5, 1fr);
   max-width: 500px;
   gap: 0.5em;
-
 
   margin: 1em auto;
 }

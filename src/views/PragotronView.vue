@@ -73,6 +73,12 @@
         </div>
       </div>
     </div>
+
+    <audio loop ref="audio">
+      <source src="/pragotron.ogg" type="audio/ogg" />
+      <source src="/pragotron.flac" type="audio/mpeg" />
+      <source src="/pragotron.mp3" type="audio/mpeg" />
+    </audio>
   </div>
 </template>
 
@@ -131,9 +137,9 @@ export default defineComponent({
     includeArrivals: true,
 
     isAnimationRunning: true,
-    // intervalIndex: 0,
-
     lastRefreshTime: 0,
+
+    animatingStatus: 'init' as 'init' | 'running' | 'complete',
 
     departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
@@ -167,6 +173,7 @@ export default defineComponent({
 
   deactivated() {
     this.isAnimationRunning = false;
+    this.animatingStatus = 'init';
   },
 
   watch: {
@@ -209,6 +216,14 @@ export default defineComponent({
             };
           }
         }
+      }
+    },
+
+    animatingStatus(val: typeof this.animatingStatus) {
+      if (val == 'running') (this.$refs['audio'] as HTMLAudioElement).play();
+      else {
+        (this.$refs['audio'] as HTMLAudioElement).currentTime = 0;
+        (this.$refs['audio'] as HTMLAudioElement).pause();
       }
     },
 
@@ -311,9 +326,6 @@ export default defineComponent({
         1
       );
 
-      // elRef.style.width = `${window.innerWidth - 10}px`;
-      // elRef.style.height = `${(window.innerWidth - 10) / 2}px`;
-
       elRef.style.transform = `scale(${scale})`;
     },
 
@@ -323,7 +335,6 @@ export default defineComponent({
     },
 
     abbrevStationName(name: string) {
-      // return (stationAbbrevs[name] || name).toUpperCase();
       return name.toUpperCase();
     },
 
@@ -334,7 +345,6 @@ export default defineComponent({
         this.updateTableRows();
 
         this.currentRouteIndex = (this.currentRouteIndex + 1) % this.departureRoutes.length;
-        // this.currentDateDigitIndex = (this.currentDateDigitIndex + 1) % this.dateDigits.length;
         this.lastRefreshTime = time;
       }
 
@@ -342,6 +352,8 @@ export default defineComponent({
     },
 
     updateTableRows() {
+      let isCurrentTickAnimating = false;
+
       for (let i = 0; i < this.departureTable.length; i++) {
         const dep = this.departureTable[i];
 
@@ -350,6 +362,8 @@ export default defineComponent({
 
           dep.tableValues.currentRowIndexes[0] =
             (dep.tableValues.currentRowIndexes[0] + 1) % this.departureRoutes.length;
+
+          isCurrentTickAnimating = true;
         }
 
         if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
@@ -357,6 +371,8 @@ export default defineComponent({
 
           dep.tableValues.currentRowIndexes[1] =
             (dep.tableValues.currentRowIndexes[1] + 1) % this.departureRoutes.length;
+
+          isCurrentTickAnimating = true;
         }
 
         dep.tableValues.dateDigits.forEach((digit, j) => {
@@ -365,9 +381,13 @@ export default defineComponent({
               this.dateDigits[dep.tableValues.currentRowIndexes[j + 2]];
             dep.tableValues.currentRowIndexes[j + 2] =
               (dep.tableValues.currentRowIndexes[j + 2] + 1) % this.dateDigits.length;
+
+            isCurrentTickAnimating = true;
           }
         });
       }
+
+      this.animatingStatus = isCurrentTickAnimating ? 'running' : 'complete';
     },
 
     shuffleRoutes() {

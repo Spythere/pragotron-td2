@@ -36,14 +36,6 @@ export default defineComponent({
     setInterval(() => {
       this.apiStore.fetchActiveData();
     }, 30000);
-  },
-
-  methods: {
-    testAudio() {
-      const audio = new Audio('../public/pragotron.mp3');
-      audio.play();
-      audio.loop = true;
-    }
   }
 });
 </script>

@@ -42,8 +42,8 @@
               </span>
               <span class="train-class">
                 <transition name="slot-anim" mode="out-in">
-                  <div class="slider-slot" :key="departure.trainNumber">
-                    {{ departure.trainNumber }}
+                  <div class="slider-slot" :key="departure.tableValues.trainNumber">
+                    {{ departure.tableValues.trainNumber }}
                   </div>
                 </transition>
               </span>
@@ -85,7 +85,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import { ITableRow } from '../types/ITableRow';
+import { ITableRow, RowIndex } from '../types/ITableRow';
 import { useMainStore } from '../stores/mainStore';
 import { useApiStore } from '../stores/apiStore';
 
@@ -109,9 +109,9 @@ const departureInfoEmptyObj: ITableRow = {
   tableValues: {
     routeTo: '',
     routeVia: '',
+    trainNumber: '',
 
-    currentRowIndexes: [0, 0, 0, 0, 0, 0],
-
+    currentRowIndexes: [0, 0, 0, 0, 0, 0, 0],
     dateDigits: ['', '', '', '']
   }
 };
@@ -144,6 +144,7 @@ export default defineComponent({
     departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
     dateDigits: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ''],
+    trainNumbersSet: new Set<string>(['']),
 
     currentRouteIndex: 0,
     currentDateDigitIndex: 0,
@@ -188,7 +189,8 @@ export default defineComponent({
             this.departureTable[i] = { ...updateInfo };
             this.departureTable[i].tableValues.routeTo = existingInfo.routeTo;
             this.departureTable[i].tableValues.routeVia = existingInfo.routeVia;
-            // this.departureTable[i].dateDigits = [...existingInfo.tableValues.dateDigits];
+            this.departureTable[i].tableValues.trainNumber = existingInfo.trainNumber;
+
             this.departureTable[i].tableValues.dateDigits = [
               ...existingInfo.tableValues.dateDigits
             ];
@@ -297,13 +299,17 @@ export default defineComponent({
             tableValues: {
               routeTo: '',
               routeVia: '',
+              trainNumber: '',
               dateDigits: ['', '', '', ''],
-              currentRowIndexes: [0, 0, 0, 0, 0, 0]
+              currentRowIndexes: [0, 0, 0, 0, 0, 0, 0]
             }
           });
 
           if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
           if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
+
+
+          this.trainNumbersSet.add(`${timetable.category} ${train.trainNo}`);
 
           return list;
         }, [] as ITableRow[])
@@ -361,33 +367,44 @@ export default defineComponent({
         const dep = this.departureTable[i];
 
         if (dep.tableValues.routeTo.toLowerCase() != dep.routeTo.toLowerCase()) {
-          dep.tableValues.routeTo = this.departureRoutes[dep.tableValues.currentRowIndexes[0]];
+          dep.tableValues.routeTo =
+            this.departureRoutes[dep.tableValues.currentRowIndexes[RowIndex.RouteTo]];
 
-          dep.tableValues.currentRowIndexes[0] =
-            (dep.tableValues.currentRowIndexes[0] + 1) % this.departureRoutes.length;
+          dep.tableValues.currentRowIndexes[RowIndex.RouteTo] =
+            (dep.tableValues.currentRowIndexes[RowIndex.RouteTo] + 1) % this.departureRoutes.length;
 
           isCurrentTickAnimating = true;
         }
 
         if (dep.tableValues.routeVia.toLowerCase() != dep.routeVia.toLowerCase()) {
-          dep.tableValues.routeVia = this.departureRoutes[dep.tableValues.currentRowIndexes[1]];
+          dep.tableValues.routeVia =
+            this.departureRoutes[dep.tableValues.currentRowIndexes[RowIndex.RouteVia]];
 
-          dep.tableValues.currentRowIndexes[1] =
-            (dep.tableValues.currentRowIndexes[1] + 1) % this.departureRoutes.length;
+          dep.tableValues.currentRowIndexes[RowIndex.RouteVia] =
+            (dep.tableValues.currentRowIndexes[RowIndex.RouteVia] + 1) %
+            this.departureRoutes.length;
 
           isCurrentTickAnimating = true;
         }
 
         dep.tableValues.dateDigits.forEach((digit, j) => {
           if (dep.dateDigits[j] != digit) {
-            dep.tableValues.dateDigits[j] =
-              this.dateDigits[dep.tableValues.currentRowIndexes[j + 2]];
-            dep.tableValues.currentRowIndexes[j + 2] =
-              (dep.tableValues.currentRowIndexes[j + 2] + 1) % this.dateDigits.length;
+            dep.tableValues.dateDigits[j] = this.dateDigits[dep.tableValues.currentRowIndexes[j]];
+            dep.tableValues.currentRowIndexes[j] =
+              (dep.tableValues.currentRowIndexes[j] + 1) % this.dateDigits.length;
 
             isCurrentTickAnimating = true;
           }
         });
+
+        if (dep.trainNumber != dep.tableValues.trainNumber) {
+          dep.tableValues.trainNumber = Array.from(this.trainNumbersSet)[dep.tableValues.currentRowIndexes[RowIndex.TrainNumber]]
+
+          dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] =
+            (dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] + 1) % this.trainNumbersSet.size;
+
+          isCurrentTickAnimating = true;
+        }
       }
 
       this.animatingStatus = isCurrentTickAnimating ? 'running' : 'complete';

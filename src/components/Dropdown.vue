@@ -37,11 +37,12 @@
         <div style="margin: 0.5em 0">
           <label for="language">
             {{ t.dropdown.language.label }}:
-            <select id="language" v-model="store.language">
-              <option value="pl">{{ t.dropdown.language.options.pl }}</option>
-              <option value="de">{{ t.dropdown.language.options.de }}</option>
-            </select>
-          </label>
+          <select id="language" v-model="store.language">
+            <option value="pl">{{ t.dropdown.language.options.pl }}</option>
+            <option value="de">{{ t.dropdown.language.options.de }}</option>
+            <option value="en">{{ t.dropdown.language.options.en }}</option>
+          </select>
+        </label>
         </div>
 
         <div v-if="isPragotronOpen" style="margin: 0.5em 0">

@@ -30,7 +30,7 @@ export const useMainStore = defineStore('main', {
         timetableMode: 'departures' as 'departures' | 'arrivals',
         soundsEnabled: false
       },
-      language: 'pl' as Language,
+      language: 'en' as Language,
       selectedStationName: '',
       selectedCheckpointName: ''
     };

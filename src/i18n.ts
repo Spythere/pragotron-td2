@@ -1,8 +1,9 @@
-export type Language = 'pl' | 'de';
+export type Language = 'pl' | 'de' | 'en';
 
 export const locales: Record<Language, string> = {
   pl: 'pl-PL',
-  de: 'de-DE'
+  de: 'de-DE',
+  en: 'en-GB'
 };
 
 export const translations = {
@@ -18,7 +19,8 @@ export const translations = {
         label: 'Język',
         options: {
           pl: 'Polski',
-          de: 'Niemiecki'
+          de: 'Niemiecki',
+          en: 'Angielski'
         }
       },
       checkpointLabel: 'Posterunek:',
@@ -52,7 +54,8 @@ export const translations = {
         label: 'Sprache',
         options: {
           pl: 'Polnisch',
-          de: 'Deutsch'
+          de: 'Deutsch',
+          en: 'Englisch'
         }
       },
       checkpointLabel: 'Stellwerk:',
@@ -72,6 +75,41 @@ export const translations = {
         delay: 'VERSPÄTUNG'
       },
       audioError: 'Der Sound konnte nicht abgespielt werden:'
+    }
+  },
+  en: {
+    dropdown: {
+      title: 'Options',
+      filters: {
+        nonPassenger: 'Non-passenger services',
+        terminating: 'Terminating services',
+        soundsEnabled: 'Sounds'
+      },
+      language: {
+        label: 'Language',
+        options: {
+          pl: 'Polish',
+          de: 'German',
+          en: 'English'
+        }
+      },
+      checkpointLabel: 'Checkpoint:',
+      alt: 'options'
+    },
+    home: {
+      heading: 'Select a region and scenery to open the Pragotron view',
+      loading: 'Loading active sceneries...',
+      empty: 'No active sceneries'
+    },
+    pragotron: {
+      headers: {
+        time: 'TIME',
+        train: 'TRAIN',
+        via: 'VIA',
+        destination: 'DESTINATION',
+        delay: 'DELAY'
+      },
+      audioError: 'The sound could not be played:'
     }
   }
 } as const;

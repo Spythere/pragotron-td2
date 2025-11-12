@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 import ISceneryData from '../types/ISceneryData';
 import { useApiStore } from './apiStore';
+import type { Language } from '../i18n';
 
 export enum Region {
   PL1 = 'eu',
@@ -29,6 +30,7 @@ export const useMainStore = defineStore('main', {
         timetableMode: 'departures' as 'departures' | 'arrivals',
         soundsEnabled: false
       },
+      language: 'pl' as Language,
       selectedStationName: '',
       selectedCheckpointName: ''
     };

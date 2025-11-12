@@ -35,11 +35,32 @@ export default defineComponent({
       const settingsStorage = window.localStorage.getItem('settings');
 
       if (settingsStorage != null) {
-        const settingsObj = JSON.parse(settingsStorage) as Record<string, any>;
+        const settingsObj = JSON.parse(settingsStorage) as
+          | {
+              filters?: Record<string, any>;
+              language?: string;
+            }
+          | Record<string, any>;
 
-        Object.keys(settingsObj).forEach((key) => {
-          (this.mainStore.filters as any)[key] = settingsObj[key];
-        });
+        if ('filters' in settingsObj) {
+          const filters = (settingsObj.filters || {}) as Record<string, any>;
+          Object.keys(filters).forEach((key) => {
+            if (key in this.mainStore.filters) {
+              (this.mainStore.filters as any)[key] = filters[key];
+            }
+          });
+
+          if (settingsObj.language) {
+            this.mainStore.language = settingsObj.language as typeof this.mainStore.language;
+          }
+        } else {
+          const legacySettings = settingsObj as Record<string, any>;
+          Object.keys(legacySettings).forEach((key) => {
+            if (key in this.mainStore.filters) {
+              (this.mainStore.filters as any)[key] = legacySettings[key];
+            }
+          });
+        }
       }
     }
   },

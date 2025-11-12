@@ -7,11 +7,11 @@
             <div>{{ mainStore.selectedCheckpointName.toUpperCase() }}</div>
           </span>
           <div class="headers">
-            <span>GODZ.</span>
-            <span>POCIĄG</span>
-            <span>PRZEZ</span>
-            <span>DO STACJI</span>
-            <span>OPÓŹNIONY</span>
+            <span>{{ t.pragotron.headers.time }}</span>
+            <span>{{ t.pragotron.headers.train }}</span>
+            <span>{{ t.pragotron.headers.via }}</span>
+            <span>{{ t.pragotron.headers.destination }}</span>
+            <span>{{ t.pragotron.headers.delay }}</span>
           </div>
         </div>
         <div class="table">
@@ -88,6 +88,7 @@ import { defineComponent } from 'vue';
 import { ITableRow, RowIndex } from '../types/ITableRow';
 import { useMainStore } from '../stores/mainStore';
 import { useApiStore } from '../stores/apiStore';
+import { locales, translations } from '../i18n';
 
 const departureInfoEmptyObj: ITableRow = {
   timetableId: -1,
@@ -224,7 +225,7 @@ export default defineComponent({
     animatingStatus(val: typeof this.animatingStatus) {
       if (val == 'running' && this.mainStore.filters.soundsEnabled)
         (this.$refs['audio'] as HTMLAudioElement).play().catch((err) => {
-          console.error('Dźwięk nie mógł zostać odtworzony:', err);
+          console.error(`${this.t.pragotron.audioError}`, err);
         });
       else {
         (this.$refs['audio'] as HTMLAudioElement).currentTime = 0;
@@ -240,6 +241,12 @@ export default defineComponent({
   },
 
   computed: {
+    t() {
+      return translations[this.mainStore.language];
+    },
+    locale() {
+      return locales[this.mainStore.language];
+    },
     filledTable() {
       const filteredData = this.apiStore.activeData?.trains
         .reduce((list, train) => {
@@ -270,16 +277,12 @@ export default defineComponent({
 
           const date = departureLine ? new Date(departureTimestamp) : new Date(arrivalTimestamp);
 
-          // [HH, MM, SS] - nienawidzę dat w JavaScripcie
-          const dateArray = date.toLocaleString('pl-PL').split(', ')[1].split(':') || [
-            '',
-            '',
-            '',
-            ''
-          ];
+          const timeString = date.toLocaleTimeString(this.locale, { hour12: false });
+          const [hoursRaw = '', minutesRaw = ''] = timeString.split(':');
+          const hours = hoursRaw.padStart(2, '0');
+          const minutes = minutesRaw.padStart(2, '0');
 
-          // [H,H,M,M] - ZABIJCIE MNIE BŁAGAM
-          const dateDigits = [...dateArray[0].split(''), ...dateArray[1].split('')];
+          const dateDigits = [...hours.split(''), ...minutes.split('')];
 
           const routeTo = timetable.route.split('|')[1];
 

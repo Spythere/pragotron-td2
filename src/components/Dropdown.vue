@@ -1,12 +1,12 @@
 <template>
   <div class="dropdown" v-click-outside="() => (store.optionsOpen = false)">
     <button class="btn--image" @click="store.optionsOpen = !store.optionsOpen">
-      <img src="/options.svg" alt="options" />
+      <img src="/options.svg" :alt="t.dropdown.alt" />
     </button>
 
     <transition name="dropdown-anim">
       <div class="dropdown-body" v-if="store.optionsOpen">
-        <h3>Opcje</h3>
+        <h3>{{ t.dropdown.title }}</h3>
         <hr />
 
         <div
@@ -20,23 +20,33 @@
         >
           <label>
             <input type="checkbox" v-model="store.filters.nonPassenger" />
-            Relacje niepasażerskie
+            {{ t.dropdown.filters.nonPassenger }}
           </label>
 
           <label>
             <input type="checkbox" v-model="store.filters.terminating" />
-            Relacje kończące bieg
+            {{ t.dropdown.filters.terminating }}
           </label>
 
           <label>
             <input type="checkbox" v-model="store.filters.soundsEnabled" />
-            Dźwięki
+            {{ t.dropdown.filters.soundsEnabled }}
+          </label>
+        </div>
+
+        <div style="margin: 0.5em 0">
+          <label for="language">
+            {{ t.dropdown.language.label }}:
+            <select id="language" v-model="store.language">
+              <option value="pl">{{ t.dropdown.language.options.pl }}</option>
+              <option value="de">{{ t.dropdown.language.options.de }}</option>
+            </select>
           </label>
         </div>
 
         <div v-if="isPragotronOpen" style="margin: 0.5em 0">
           <label for="checkpoint">
-            Posterunek:
+            {{ t.dropdown.checkpointLabel }}
             <select id="checkpoint" v-model="store.selectedCheckpointName">
               <option v-for="cp in store.selectedStation?.stationCheckpoints" :value="cp" :key="cp">
                 {{ cp }}
@@ -54,6 +64,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useMainStore } from '../stores/mainStore';
+import { translations } from '../i18n';
 
 export default defineComponent({
   data: () => ({
@@ -61,6 +72,9 @@ export default defineComponent({
   }),
 
   computed: {
+    t() {
+      return translations[this.store.language];
+    },
     isPragotronOpen() {
       return this.$route.path == '/board';
     }
@@ -70,8 +84,18 @@ export default defineComponent({
     'store.filters': {
       deep: true,
       handler(filters: typeof this.store.filters) {
-        window.localStorage.setItem('settings', JSON.stringify(filters));
+        this.saveSettings(filters, this.store.language);
       }
+    },
+
+    'store.language'(language: typeof this.store.language) {
+      this.saveSettings(this.store.filters, language);
+    }
+  },
+
+  methods: {
+    saveSettings(filters: typeof this.store.filters, language: typeof this.store.language) {
+      window.localStorage.setItem('settings', JSON.stringify({ filters, language }));
     }
   }
 });

@@ -1,7 +1,7 @@
 <template>
   <div class="home-view">
     <div>
-      <h1 style="margin: 0">Wybierz region i scenerię, aby otworzyć widok pragotronu</h1>
+      <h1 style="margin: 0">{{ t.home.heading }}</h1>
 
       <div class="region-selector g-selector">
         <label v-for="region in regions" :key="region">
@@ -21,10 +21,10 @@
 
       <transition name="list-anim" tag="div" mode="out-in">
         <h3 v-if="apiStore.dataStatuses.activeData == DataStatus.LOADING">
-          Ładowanie listy aktywnych scenerii...
+          {{ t.home.loading }}
         </h3>
 
-        <h3 v-else-if="sceneriesOnline.length == 0">Brak aktywnych scenerii</h3>
+        <h3 v-else-if="sceneriesOnline.length == 0">{{ t.home.empty }}</h3>
 
         <ul v-else class="scenery-list" :key="mainStore.region">
           <li v-for="station in sceneriesOnline" :key="station.stationName">
@@ -42,6 +42,7 @@
 import { defineComponent } from 'vue';
 import { DataStatus, useApiStore } from '../stores/apiStore';
 import { Region, useMainStore, regionNames } from '../stores/mainStore';
+import { translations } from '../i18n';
 
 export default defineComponent({
   data() {
@@ -55,6 +56,9 @@ export default defineComponent({
   },
 
   computed: {
+    t() {
+      return translations[this.mainStore.language];
+    },
     sceneriesOnline() {
       return (
         this.apiStore.activeData?.activeSceneries

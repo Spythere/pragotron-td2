@@ -66,6 +66,7 @@ export default defineComponent({
     this.apiStore.fetchActiveData();
 
     this.loadLocalSettings();
+    this.loadLang();
   },
 
   mounted() {

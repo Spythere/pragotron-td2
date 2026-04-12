@@ -4,10 +4,6 @@
       <router-link class="brand" to="/">
         Pragotron TD2 <span class="text--accent">v{{ version }}</span> <sup>by Spythere</sup>
       </router-link>
-
-      <div class="options">
-        <Dropdown />
-      </div>
     </div>
   </nav>
 </template>
@@ -15,10 +11,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useMainStore } from '../stores/mainStore';
-import Dropdown from './Dropdown.vue';
 
 export default defineComponent({
-  components: { Dropdown },
   props: {
     version: String
   },
@@ -53,7 +47,7 @@ nav.navbar {
   position: relative;
 
   margin: 0 auto;
-  max-width: 1400px;
+  max-width: 1500px;
 
   font-weight: bold;
 }

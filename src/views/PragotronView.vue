@@ -1,6 +1,40 @@
 <template>
   <div class="pragotron">
     <div class="pragotron_content">
+      <div class="pragotron_options">
+        <div class="options-checkboxes">
+          <label>
+            <input type="checkbox" v-model="mainStore.filters.nonPassenger" />
+            {{ $t('options.checkbox-non-passenger') }}
+          </label>
+
+          <label>
+            <input type="checkbox" v-model="mainStore.filters.terminating" />
+            {{ $t('options.checkbox-terminating') }}
+          </label>
+
+          <label>
+            <input type="checkbox" v-model="mainStore.filters.soundsEnabled" />
+            {{ $t('options.checkbox-sounds') }}
+          </label>
+        </div>
+
+        <div class="options-checkpoints">
+          <label for="checkpoint">
+            {{ $t('options.checkpoint-name') }}
+            <select id="checkpoint" v-model="mainStore.selectedCheckpointName">
+              <option
+                v-for="cp in mainStore.selectedStation?.stationCheckpoints"
+                :value="cp"
+                :key="cp"
+              >
+                {{ cp }}
+              </option>
+            </select>
+          </label>
+        </div>
+      </div>
+
       <div class="wrapper" ref="pragotron">
         <div class="top-pane">
           <span class="title">
@@ -327,16 +361,15 @@ export default defineComponent({
 
   methods: {
     resizeTable() {
-      const elRef = this.$refs['pragotron'] as HTMLElement;
-      if (!elRef) return;
-
-      const scale = Math.min(
-        window.innerWidth / elRef.clientWidth,
-        window.innerHeight / elRef.clientHeight,
-        1
-      );
-
-      elRef.style.transform = `scale(${scale})`;
+      // const elRef = this.$refs['pragotron'] as HTMLElement;
+      // if (!elRef) return;
+      // const scale = Math.min(
+      //   window.innerWidth / elRef.clientWidth,
+      //   window.innerHeight / elRef.clientHeight,
+      //   1
+      // );
+      // console.log(elRef.clientWidth);
+      // elRef.style.transform = `scale(${scale})`;
     },
 
     selectDefaultCheckpoint() {
@@ -450,34 +483,58 @@ export default defineComponent({
 
 /* ************** */
 
-.pragotron_content {
+.pragotron {
   display: flex;
   justify-content: center;
   padding: 1em;
 }
 
+@media only screen and (max-width: 1500px) {
+  .pragotron {
+    font-size: calc(0.3em + 0.65vw);
+  }
+}
+
+.pragotron_options {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  width: 100%;
+  margin-bottom: 0.5em;
+}
+
+.pragotron_content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 1500px;
+}
+
 .wrapper {
   display: flex;
   flex-direction: column;
-  min-width: 1400px;
-  min-height: 700px;
-  padding: 2em;
 
-  transform-origin: top;
+  width: 100%;
+  min-height: 50em;
+  overflow: auto;
 }
 
 .top-pane > .headers,
 .row-content {
   display: grid;
   grid-template-columns: 1fr 1fr 2fr 2fr 1fr;
-  gap: 0 10px;
-  padding: 0 10px;
+  gap: 0 1em;
+  padding: 0 1em;
 }
 
 .top-pane {
   background-color: white;
   color: black;
-  height: 180px;
+  height: 12em;
+  min-width: 700px;
 
   display: flex;
   flex-direction: column;
@@ -485,24 +542,24 @@ export default defineComponent({
 
   .title {
     padding: 0;
-
     font-size: 3.5em;
   }
 
   .headers {
     text-align: center;
-
     font-size: 1.35em;
   }
 }
 
 .table {
-  background: white;
   flex-grow: 1;
 
   display: grid;
   grid-template-rows: repeat(7, 1fr);
   gap: 5px 0;
+
+  background: white;
+  min-width: 700px;
 }
 
 .row {

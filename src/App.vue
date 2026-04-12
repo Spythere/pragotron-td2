@@ -89,7 +89,6 @@ export default defineComponent({
 }
 
 main {
-  padding: 1em;
   overflow-x: hidden;
 }
 

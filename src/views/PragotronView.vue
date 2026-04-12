@@ -580,10 +580,10 @@ export default defineComponent({
 }
 
 .departure-date {
-  background: black;
+  background: #010101;
 
   span {
-    background: black;
+    background: #010101;
     height: 2em;
     line-height: 2em;
     flex-grow: 2;

@@ -76,5 +76,17 @@ nav.navbar {
   padding: 0.25em 0.5em;
   border-radius: 0.5em;
   color: white;
+
+  font-size: 1em;
+
+  img {
+    width: 1.25em;
+  }
+}
+
+@media only screen and (max-width: 1400px) {
+  nav.navbar {
+    font-size: calc(0.5em + 0.5vw);
+  }
 }
 </style>

@@ -40,10 +40,10 @@ button {
   font-size: 1em;
 
   color: white;
-  background-color: #1b1b1b;
+  background-color: #0e0e0e;
 
   &:hover {
-    background-color: #252525;
+    background-color: #1a1a1a;
   }
 
   &:focus-visible {
@@ -67,14 +67,14 @@ button {
 // Input radio
 .g-selector {
   label {
-    background-color: #202020;
+    background-color: #0e0e0e;
     cursor: pointer;
 
     display: flex;
     justify-content: center;
 
     &:hover {
-      background-color: #2b2b2b;
+      background-color: #1a1a1a;
     }
 
     span {

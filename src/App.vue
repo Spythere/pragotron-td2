@@ -3,7 +3,6 @@
     <Navbar :version="version" />
 
     <main>
-      <!-- <button @click="testAudio">test audio</button> -->
       <router-view v-slot="{ Component }">
         <keep-alive>
           <component :is="Component" :key="$route.path"></component>
@@ -60,7 +59,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-@import './styles.scss';
+@use '@/styles/styles';
 
 .app_content {
   text-align: center;

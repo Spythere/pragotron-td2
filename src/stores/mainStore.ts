@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
-import ISceneryData from '../types/ISceneryData';
 import { useApiStore } from './apiStore';
+import type ISceneryData from '../typings/common';
 
 export enum Region {
   PL1 = 'eu',

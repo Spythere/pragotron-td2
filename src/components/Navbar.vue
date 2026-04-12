@@ -31,15 +31,15 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '../styles.scss';
+@use '@/styles/theme';
 
 nav.navbar {
-  background-color: $accentBg;
+  background-color: theme.$accentBg;
   padding: 0 0.5em;
 
   sup {
     font-size: 0.8em;
-    color: $dimmedText;
+    color: theme.$dimmedText;
   }
 }
 

@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=Monda:wght@400;700&display=swap');
-@import 'theme.scss';
+@use 'fonts';
+@use 'theme';
 
 body,
 html {
-  background: $primaryBg;
+  background: theme.$primaryBg;
   min-height: 100vh;
-  color: $primaryText;
+  color: theme.$primaryText;
 
   padding: 0;
   margin: 0;
@@ -47,7 +47,7 @@ button {
   }
 
   &:focus-visible {
-    color: $accentText;
+    color: theme.$accentText;
   }
 
   &.btn--image {
@@ -59,7 +59,7 @@ button {
     }
 
     &:focus-visible {
-      outline: 1px solid $accentText;
+      outline: 1px solid theme.$accentText;
     }
   }
 }
@@ -89,7 +89,7 @@ button {
       position: absolute;
 
       &:checked + span {
-        color: $accentText;
+        color: theme.$accentText;
       }
 
       &:focus-visible + span {

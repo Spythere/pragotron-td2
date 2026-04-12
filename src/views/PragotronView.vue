@@ -85,9 +85,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import { ITableRow, RowIndex } from '../types/ITableRow';
 import { useMainStore } from '../stores/mainStore';
 import { useApiStore } from '../stores/apiStore';
+import { RowIndex, type ITableRow } from '../typings/common';
 
 const departureInfoEmptyObj: ITableRow = {
   timetableId: -1,
@@ -141,7 +141,9 @@ export default defineComponent({
 
     animatingStatus: 'init' as 'init' | 'running' | 'complete',
 
-    departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
+    departureTable: Array.from({ length: 7 })
+      .fill(0)
+      .map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
     dateDigits: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ''],
     trainNumbersSet: new Set<string>(['']),
@@ -308,7 +310,6 @@ export default defineComponent({
           if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
           if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
 
-
           this.trainNumbersSet.add(`${timetable.category} ${train.trainNo}`);
 
           return list;
@@ -398,10 +399,13 @@ export default defineComponent({
         });
 
         if (dep.trainNumber != dep.tableValues.trainNumber) {
-          dep.tableValues.trainNumber = Array.from(this.trainNumbersSet)[dep.tableValues.currentRowIndexes[RowIndex.TrainNumber]]
+          dep.tableValues.trainNumber = Array.from(this.trainNumbersSet)[
+            dep.tableValues.currentRowIndexes[RowIndex.TrainNumber]
+          ];
 
           dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] =
-            (dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] + 1) % this.trainNumbersSet.size;
+            (dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] + 1) %
+            this.trainNumbersSet.size;
 
           isCurrentTickAnimating = true;
         }

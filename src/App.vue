@@ -18,7 +18,7 @@ import { defineComponent } from 'vue';
 import packageInfo from '../package.json';
 import { useApiStore } from './stores/apiStore';
 import Navbar from './components/Navbar.vue';
-import { useMainStore } from './stores/mainStore';
+import { useMainStore, type AppLocale } from './stores/mainStore';
 
 export default defineComponent({
   components: { Navbar },
@@ -46,8 +46,7 @@ export default defineComponent({
       const storageLang = window.localStorage.getItem('language');
 
       if (storageLang) {
-        this.mainStore.locale = storageLang;
-        this.$i18n.locale = storageLang;
+        this.mainStore.changeLocale(storageLang as AppLocale);
         return;
       }
 
@@ -56,8 +55,7 @@ export default defineComponent({
       const naviLanguage = window.navigator.language.toString();
 
       if (!naviLanguage.startsWith('pl')) {
-        this.mainStore.locale = 'en';
-        this.$i18n.locale = 'en';
+        this.mainStore.changeLocale('en');
         return;
       }
     }

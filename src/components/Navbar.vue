@@ -1,9 +1,16 @@
 <template>
   <nav class="navbar">
     <div class="navbar-body">
-      <router-link class="brand" to="/">
+      <router-link class="brand-link" to="/">
         Pragotron TD2 <span class="text--accent">v{{ version }}</span> <sup>by Spythere</sup>
       </router-link>
+
+      <div class="lang-switcher">
+        <button @click="switchLanguage">
+          <img src="/icon-globe.svg" alt="globe icon" />
+          {{ store.locale.toUpperCase() == 'PL' ? 'POL' : 'ENG' }}
+        </button>
+      </div>
     </div>
   </nav>
 </template>
@@ -20,6 +27,11 @@ export default defineComponent({
     return {
       store: useMainStore()
     };
+  },
+  methods: {
+    switchLanguage() {
+      this.store.changeLocale(this.store.locale == 'pl' ? 'en' : 'pl');
+    }
   }
 });
 </script>
@@ -52,7 +64,17 @@ nav.navbar {
   font-weight: bold;
 }
 
-.brand {
+.brand-link {
   font-size: 1.25em;
+}
+
+.lang-switcher button {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  padding: 0.25em 0.5em;
+  border-radius: 0.5em;
+  color: white;
 }
 </style>

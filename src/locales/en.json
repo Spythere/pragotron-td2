@@ -8,14 +8,14 @@
     "header-1": "HOUR",
     "header-2": "TRAIN",
     "header-3": "VIA",
-    "header-4": "TERMINATING",
+    "header-4": "TERMINATING AT",
     "header-5": "DELAYED"
   },
   "options": {
-    "header": "Opcje",
-    "checkbox-non-passenger": "Relacje niepasażerskie",
-    "checkbox-terminating": "Relacje kończące bieg",
-    "checkbox-sounds": "Dźwięki",
-    "checkpoint-name": "Posterunek:"
+    "header": "Options",
+    "checkbox-non-passenger": "Non-passenger trains",
+    "checkbox-terminating": "Terminating trains",
+    "checkbox-sounds": "Sounds",
+    "checkpoint-name": "Checkpoint:"
   }
 }

@@ -2,6 +2,7 @@ import { createApp, type Directive } from 'vue';
 import App from './App.vue';
 import router from './router';
 import { createPinia } from 'pinia';
+import i18n from './i18n';
 
 const pinia = createPinia();
 
@@ -20,5 +21,6 @@ const clickOutsideDirective: Directive = {
 createApp(App)
   .use(router)
   .use(pinia)
+  .use(i18n)
   .directive('click-outside', clickOutsideDirective)
   .mount('#app');

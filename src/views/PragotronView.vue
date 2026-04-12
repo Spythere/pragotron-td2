@@ -7,11 +7,11 @@
             <div>{{ mainStore.selectedCheckpointName.toUpperCase() }}</div>
           </span>
           <div class="headers">
-            <span>GODZ.</span>
-            <span>POCIĄG</span>
-            <span>PRZEZ</span>
-            <span>DO STACJI</span>
-            <span>OPÓŹNIONY</span>
+            <span>{{ $t('pragotron.header-1') }}</span>
+            <span>{{ $t('pragotron.header-2') }}</span>
+            <span>{{ $t('pragotron.header-3') }}</span>
+            <span>{{ $t('pragotron.header-4') }}</span>
+            <span>{{ $t('pragotron.header-5') }}</span>
           </div>
         </div>
         <div class="table">

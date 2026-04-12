@@ -54,6 +54,8 @@ nav.navbar {
 
   margin: 0 auto;
   max-width: 1400px;
+
+  font-weight: bold;
 }
 
 .brand {

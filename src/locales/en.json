@@ -1,0 +1,21 @@
+{
+  "home": {
+    "header": "Choose region and scenery to open the pragotron view",
+    "data-loading": "Loading active sceneries list...",
+    "no-available-data": "No active sceneries"
+  },
+  "pragotron": {
+    "header-1": "HOUR",
+    "header-2": "TRAIN",
+    "header-3": "VIA",
+    "header-4": "TERMINATING",
+    "header-5": "DELAYED"
+  },
+  "options": {
+    "header": "Opcje",
+    "checkbox-non-passenger": "Relacje niepasażerskie",
+    "checkbox-terminating": "Relacje kończące bieg",
+    "checkbox-sounds": "Dźwięki",
+    "checkpoint-name": "Posterunek:"
+  }
+}

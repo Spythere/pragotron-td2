@@ -6,37 +6,29 @@
 
     <transition name="dropdown-anim">
       <div class="dropdown-body" v-if="store.optionsOpen">
-        <h3>Opcje</h3>
+        <h3>{{ $t('options.header') }}</h3>
         <hr />
 
-        <div
-          style="
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            gap: 0.5em;
-            margin: 0.5em 0;
-          "
-        >
+        <div class="dropdown-checkboxes">
           <label>
             <input type="checkbox" v-model="store.filters.nonPassenger" />
-            Relacje niepasażerskie
+            {{ $t('options.checkbox-non-passenger') }}
           </label>
 
           <label>
             <input type="checkbox" v-model="store.filters.terminating" />
-            Relacje kończące bieg
+            {{ $t('options.checkbox-terminating') }}
           </label>
 
           <label>
             <input type="checkbox" v-model="store.filters.soundsEnabled" />
-            Dźwięki
+            {{ $t('options.checkbox-sounds') }}
           </label>
         </div>
 
-        <div v-if="isPragotronOpen" style="margin: 0.5em 0">
+        <div class="dropdown-checkpoints" v-if="isPragotronOpen">
           <label for="checkpoint">
-            Posterunek:
+            {{ $t('options.checkpoint-name') }}
             <select id="checkpoint" v-model="store.selectedCheckpointName">
               <option v-for="cp in store.selectedStation?.stationCheckpoints" :value="cp" :key="cp">
                 {{ cp }}
@@ -108,6 +100,18 @@ h3 {
   z-index: 105;
 
   background-color: #000000e1;
+}
+
+.dropdown-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5em;
+  margin: 0.5em 0;
+}
+
+.dropdown-checkpoints {
+  margin: 0.5em 0;
 }
 
 .dropdown-anim {

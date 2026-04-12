@@ -40,6 +40,26 @@ export default defineComponent({
           (this.mainStore.filters as any)[key] = settingsObj[key];
         });
       }
+    },
+
+    loadLang() {
+      const storageLang = window.localStorage.getItem('language');
+
+      if (storageLang) {
+        this.mainStore.locale = storageLang;
+        this.$i18n.locale = storageLang;
+        return;
+      }
+
+      if (!window.navigator.language) return;
+
+      const naviLanguage = window.navigator.language.toString();
+
+      if (!naviLanguage.startsWith('pl')) {
+        this.mainStore.locale = 'en';
+        this.$i18n.locale = 'en';
+        return;
+      }
     }
   },
 
@@ -68,7 +88,6 @@ export default defineComponent({
   grid-template-rows: auto 1fr;
 
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 main {

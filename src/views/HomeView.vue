@@ -1,7 +1,7 @@
 <template>
   <div class="home-view">
     <div>
-      <h1 style="margin: 0">Wybierz region i scenerię, aby otworzyć widok pragotronu</h1>
+      <h1 style="margin: 0">{{ $t('home.header') }}</h1>
 
       <div class="region-selector g-selector">
         <label v-for="region in regions" :key="region">
@@ -17,14 +17,12 @@
     </div>
 
     <div class="scenery-selector">
-      <!-- <p style="margin: 0.5em; color: #ccc">Widoczne są jedynie scenerie aktywne na serwerze PL1</p> -->
-
       <transition name="list-anim" tag="div" mode="out-in">
         <h3 v-if="apiStore.dataStatuses.activeData == DataStatus.LOADING">
-          Ładowanie listy aktywnych scenerii...
+          {{ $t('home.data-loading') }}
         </h3>
 
-        <h3 v-else-if="sceneriesOnline.length == 0">Brak aktywnych scenerii</h3>
+        <h3 v-else-if="sceneriesOnline.length == 0">{{ $t('home.no-available-data') }}</h3>
 
         <ul v-else class="scenery-list" :key="mainStore.region">
           <li v-for="station in sceneriesOnline" :key="station.stationName">

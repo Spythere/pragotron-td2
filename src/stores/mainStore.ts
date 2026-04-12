@@ -30,7 +30,8 @@ export const useMainStore = defineStore('main', {
         soundsEnabled: false
       },
       selectedStationName: '',
-      selectedCheckpointName: ''
+      selectedCheckpointName: '',
+      locale: 'pl'
     };
   },
 

@@ -489,12 +489,6 @@ export default defineComponent({
   padding: 1em;
 }
 
-@media only screen and (max-width: 1500px) {
-  .pragotron {
-    font-size: calc(0.3em + 0.65vw);
-  }
-}
-
 .pragotron_options {
   display: flex;
   justify-content: space-between;
@@ -520,6 +514,14 @@ export default defineComponent({
   width: 100%;
   min-height: 50em;
   overflow: auto;
+
+  @media only screen and (max-width: 1500px) {
+    font-size: calc(0.3em + 0.65vw);
+  }
+
+  @media only screen and (max-width: 800px) {
+    font-size: 8px;
+  }
 }
 
 .top-pane > .headers,

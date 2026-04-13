@@ -1,5 +1,6 @@
 @use 'fonts';
 @use 'theme';
+@use 'responsive';
 
 body,
 html {
@@ -10,7 +11,9 @@ html {
   padding: 0;
   margin: 0;
 
-  font-size: 16px;
+  @include responsive.smallScreen {
+    font-size: calc(0.65rem + 0.85vw);
+  }
 }
 
 *,

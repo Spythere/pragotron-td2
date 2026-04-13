@@ -88,7 +88,8 @@ export default defineComponent({
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin-top: 3em;
+
+  padding: 1em;
 }
 
 .region-selector {

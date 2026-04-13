@@ -2,7 +2,9 @@
   <nav class="navbar">
     <div class="navbar-body">
       <router-link class="brand-link" to="/">
-        Pragotron TD2 <span class="text--accent">v{{ version }}</span> <sup>by Spythere</sup>
+        <span>Pragotron TD2</span>
+        <span class="text--accent"> v{{ version }}</span>
+        <sup> by Spythere</sup>
       </router-link>
 
       <div class="lang-switcher">
@@ -42,11 +44,6 @@ export default defineComponent({
 nav.navbar {
   background-color: theme.$accentBg;
   padding: 0 0.5em;
-
-  sup {
-    font-size: 0.8em;
-    color: theme.$dimmedText;
-  }
 }
 
 .navbar-body {
@@ -66,6 +63,11 @@ nav.navbar {
 
 .brand-link {
   font-size: 1.25em;
+
+  sup {
+    font-size: 0.6em;
+    color: theme.$dimmedText;
+  }
 }
 
 .lang-switcher button {
@@ -81,12 +83,6 @@ nav.navbar {
 
   img {
     width: 1.25em;
-  }
-}
-
-@media only screen and (max-width: 1400px) {
-  nav.navbar {
-    font-size: calc(0.5em + 0.5vw);
   }
 }
 </style>

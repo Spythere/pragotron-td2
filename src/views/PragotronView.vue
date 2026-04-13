@@ -188,18 +188,8 @@ export default defineComponent({
     currentRowAnimating: 0
   }),
 
-  async created() {
-    // this.selectDefaultCheckpoint();
-
-    window.addEventListener('resize', () => {
-      this.resizeTable();
-    });
-  },
-
   activated() {
     this.mainStore.selectedStationName = this.stationName;
-
-    this.resizeTable();
 
     this.selectDefaultCheckpoint();
     this.shuffleRoutes();
@@ -265,6 +255,13 @@ export default defineComponent({
       else {
         (this.$refs['audio'] as HTMLAudioElement).currentTime = 0;
         (this.$refs['audio'] as HTMLAudioElement).pause();
+      }
+    },
+
+    'mainStore.filters': {
+      deep: true,
+      handler: function (val) {
+        window.localStorage.setItem('settings', JSON.stringify(val));
       }
     },
 
@@ -360,18 +357,6 @@ export default defineComponent({
   },
 
   methods: {
-    resizeTable() {
-      // const elRef = this.$refs['pragotron'] as HTMLElement;
-      // if (!elRef) return;
-      // const scale = Math.min(
-      //   window.innerWidth / elRef.clientWidth,
-      //   window.innerHeight / elRef.clientHeight,
-      //   1
-      // );
-      // console.log(elRef.clientWidth);
-      // elRef.style.transform = `scale(${scale})`;
-    },
-
     selectDefaultCheckpoint() {
       this.mainStore.selectedCheckpointName =
         this.mainStore.selectedStation?.stationCheckpoints[0] || this.stationName;

@@ -84,6 +84,7 @@ const sceneriesOnline = computed(() => {
   width: 100%;
   max-width: 400px;
   height: auto;
+  z-index: 100;
 }
 
 .wrapper {

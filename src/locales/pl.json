@@ -12,10 +12,11 @@
     "header-5": "OPÓŹNIONY"
   },
   "options": {
-    "header": "Opcje",
+    "btn-title": "OPCJE",
     "checkbox-non-passenger": "Relacje niepasażerskie",
     "checkbox-terminating": "Relacje kończące bieg",
     "checkbox-sounds": "Dźwięki",
-    "checkpoint-name": "Posterunek:"
+    "checkpoint-name": "Posterunek:",
+    "station-name": "Sceneria:"
   }
 }

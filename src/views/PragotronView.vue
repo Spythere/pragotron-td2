@@ -2,36 +2,15 @@
   <div class="pragotron">
     <div class="pragotron_content">
       <div class="pragotron_options">
-        <div class="options-checkboxes">
-          <label>
-            <input type="checkbox" v-model="mainStore.filters.nonPassenger" />
-            {{ $t('options.checkbox-non-passenger') }}
-          </label>
+        <div v-click-outside="() => (isFiltersDropdownOpen = false)">
+          <button class="options-btn" @click="isFiltersDropdownOpen = !isFiltersDropdownOpen">
+            <img src="/icon-options.svg" width="20" alt="" />
+            {{ $t('options.btn-title') }}
+          </button>
 
-          <label>
-            <input type="checkbox" v-model="mainStore.filters.terminating" />
-            {{ $t('options.checkbox-terminating') }}
-          </label>
-
-          <label>
-            <input type="checkbox" v-model="mainStore.filters.soundsEnabled" />
-            {{ $t('options.checkbox-sounds') }}
-          </label>
-        </div>
-
-        <div class="options-checkpoints">
-          <label for="checkpoint">
-            {{ $t('options.checkpoint-name') }}
-            <select id="checkpoint" v-model="mainStore.selectedCheckpointName">
-              <option
-                v-for="cp in mainStore.selectedStation?.stationCheckpoints"
-                :value="cp"
-                :key="cp"
-              >
-                {{ cp }}
-              </option>
-            </select>
-          </label>
+          <transition name="filters-anim">
+            <filters-dropdown @stationChanged="selectStation()" v-if="isFiltersDropdownOpen" />
+          </transition>
         </div>
       </div>
 
@@ -122,6 +101,7 @@ import { defineComponent } from 'vue';
 import { useMainStore } from '../stores/mainStore';
 import { useApiStore } from '../stores/apiStore';
 import { RowIndex, type ITableRow } from '../typings/common';
+import FiltersDropdown from '../components/FiltersDropdown.vue';
 
 const departureInfoEmptyObj: ITableRow = {
   timetableId: -1,
@@ -151,6 +131,8 @@ const departureInfoEmptyObj: ITableRow = {
 };
 
 export default defineComponent({
+  components: { FiltersDropdown },
+
   props: {
     stationName: {
       type: String,
@@ -169,6 +151,8 @@ export default defineComponent({
 
     includeNonPassenger: true,
     includeArrivals: true,
+
+    isFiltersDropdownOpen: false,
 
     isAnimationRunning: true,
     lastRefreshTime: 0,
@@ -362,6 +346,20 @@ export default defineComponent({
         this.mainStore.selectedStation?.stationCheckpoints[0] || this.stationName;
     },
 
+    selectStation() {
+      console.log('xd');
+      this.$router.push({
+        path: '/board',
+        query: {
+          name: this.mainStore.selectedStationName,
+          region: this.mainStore.region
+        }
+      });
+
+      this.selectDefaultCheckpoint();
+      this.shuffleRoutes();
+    },
+
     abbrevStationName(name: string) {
       return name.toUpperCase();
     },
@@ -466,6 +464,19 @@ export default defineComponent({
   }
 }
 
+.filters-anim {
+  &-enter-active,
+  &-leave-active {
+    transition: all 100ms ease-in-out;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+}
+
 /* ************** */
 
 .pragotron {
@@ -475,11 +486,19 @@ export default defineComponent({
 }
 
 .pragotron_options {
+  position: relative;
   display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
+  justify-content: flex-end;
   width: 100%;
-  margin-bottom: 0.5em;
+}
+
+.options-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  font-weight: bold;
+  padding: 0.25em 0.5em;
+  border-radius: 0.5em 0.5em 0 0;
 }
 
 .pragotron_content {

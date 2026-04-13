@@ -12,10 +12,11 @@
     "header-5": "DELAYED"
   },
   "options": {
-    "header": "Options",
+    "btn-title": "OPTIONS",
     "checkbox-non-passenger": "Non-passenger trains",
     "checkbox-terminating": "Terminating trains",
     "checkbox-sounds": "Sounds",
-    "checkpoint-name": "Checkpoint:"
+    "checkpoint-name": "Checkpoint:",
+    "station-name": "Scenery:"
   }
 }

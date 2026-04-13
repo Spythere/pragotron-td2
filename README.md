@@ -1,24 +1,5 @@
-# pragotron-td2
+# [PRAGOTRON TD2](https://pragotron-td2.spythere.eu/)
 
-## Project setup
-```
-npm install
-```
+A website with a replica of a Czechoslovakian station platform information display (commonly known as a "pragotron") showing active scenery's timetables in the Train Driver 2 simulator.
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
-
-### Compiles and minifies for production
-```
-npm run build
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+## https://pragotron-td2.spythere.eu/

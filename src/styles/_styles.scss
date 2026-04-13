@@ -1,16 +1,19 @@
-@import url('https://fonts.googleapis.com/css2?family=Monda:wght@400;700&display=swap');
-@import 'theme.scss';
+@use 'fonts';
+@use 'theme';
+@use 'responsive';
 
 body,
 html {
-  background: $primaryBg;
+  background: theme.$primaryBg;
   min-height: 100vh;
-  color: $primaryText;
+  color: theme.$primaryText;
 
   padding: 0;
   margin: 0;
 
-  font-size: 16px;
+  @include responsive.smallScreen {
+    font-size: calc(0.65rem + 0.85vw);
+  }
 }
 
 *,
@@ -40,14 +43,14 @@ button {
   font-size: 1em;
 
   color: white;
-  background-color: #1b1b1b;
+  background-color: #0e0e0e;
 
   &:hover {
-    background-color: #252525;
+    background-color: #1a1a1a;
   }
 
   &:focus-visible {
-    color: $accentText;
+    color: theme.$accentText;
   }
 
   &.btn--image {
@@ -59,7 +62,7 @@ button {
     }
 
     &:focus-visible {
-      outline: 1px solid $accentText;
+      outline: 1px solid theme.$accentText;
     }
   }
 }
@@ -67,14 +70,14 @@ button {
 // Input radio
 .g-selector {
   label {
-    background-color: #202020;
+    background-color: #0e0e0e;
     cursor: pointer;
 
     display: flex;
     justify-content: center;
 
     &:hover {
-      background-color: #2b2b2b;
+      background-color: #1a1a1a;
     }
 
     span {
@@ -89,7 +92,7 @@ button {
       position: absolute;
 
       &:checked + span {
-        color: $accentText;
+        color: theme.$accentText;
       }
 
       &:focus-visible + span {

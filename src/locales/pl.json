@@ -1,0 +1,22 @@
+{
+  "home": {
+    "header": "Wybierz region i scenerię, aby otworzyć widok pragotronu",
+    "data-loading": "Ładowanie listy aktywnych scenerii...",
+    "no-available-data": "Brak aktywnych scenerii"
+  },
+  "pragotron": {
+    "header-1": "GODZ.",
+    "header-2": "POCIĄG",
+    "header-3": "PRZEZ",
+    "header-4": "DO STACJI",
+    "header-5": "OPÓŹNIONY"
+  },
+  "options": {
+    "btn-title": "OPCJE",
+    "checkbox-non-passenger": "Relacje niepasażerskie",
+    "checkbox-terminating": "Relacje kończące bieg",
+    "checkbox-sounds": "Dźwięki",
+    "checkpoint-name": "Posterunek:",
+    "station-name": "Sceneria:"
+  }
+}

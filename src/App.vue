@@ -3,7 +3,6 @@
     <Navbar :version="version" />
 
     <main>
-      <!-- <button @click="testAudio">test audio</button> -->
       <router-view v-slot="{ Component }">
         <keep-alive>
           <component :is="Component" :key="$route.path"></component>
@@ -19,7 +18,7 @@ import { defineComponent } from 'vue';
 import packageInfo from '../package.json';
 import { useApiStore } from './stores/apiStore';
 import Navbar from './components/Navbar.vue';
-import { useMainStore } from './stores/mainStore';
+import { useMainStore, type AppLocale } from './stores/mainStore';
 
 export default defineComponent({
   components: { Navbar },
@@ -41,6 +40,24 @@ export default defineComponent({
           (this.mainStore.filters as any)[key] = settingsObj[key];
         });
       }
+    },
+
+    loadLang() {
+      const storageLang = window.localStorage.getItem('language');
+
+      if (storageLang) {
+        this.mainStore.changeLocale(storageLang as AppLocale);
+        return;
+      }
+
+      if (!window.navigator.language) return;
+
+      const naviLanguage = window.navigator.language.toString();
+
+      if (!naviLanguage.startsWith('pl')) {
+        this.mainStore.changeLocale('en');
+        return;
+      }
     }
   },
 
@@ -49,6 +66,7 @@ export default defineComponent({
     this.apiStore.fetchActiveData();
 
     this.loadLocalSettings();
+    this.loadLang();
   },
 
   mounted() {
@@ -60,7 +78,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss">
-@import './styles.scss';
+@use '@/styles/styles';
 
 .app_content {
   text-align: center;
@@ -69,11 +87,9 @@ export default defineComponent({
   grid-template-rows: auto 1fr;
 
   min-height: 100vh;
-  overflow-x: hidden;
 }
 
 main {
-  padding: 1em;
   overflow-x: hidden;
 }
 

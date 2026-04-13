@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
-import { API } from '../typings/api';
-import http from '../http';
+import type { API } from '../typings/api';
 
 export enum DataStatus {
   LOADING = 0,
@@ -11,6 +10,8 @@ export enum DataStatus {
 export const useApiStore = defineStore('api', {
   state() {
     return {
+      baseURL: 'https://stacjownik.spythere.eu',
+
       activeData: undefined as API.ActiveData.Response | undefined,
       stationData: undefined as API.Sceneries.Response | undefined,
 
@@ -24,11 +25,11 @@ export const useApiStore = defineStore('api', {
   actions: {
     async fetchActiveData() {
       try {
-        const response = (await http.get<API.ActiveData.Response | undefined>('api/getActiveData'))
-          .data;
+        const response = await fetch(`${this.baseURL}/api/getActiveData`);
+        const responseData: API.ActiveData.Response = await response.json();
 
         this.dataStatuses.activeData = DataStatus.LOADED;
-        this.activeData = response;
+        this.activeData = responseData;
       } catch (error) {
         this.dataStatuses.activeData = DataStatus.ERROR;
 
@@ -38,11 +39,11 @@ export const useApiStore = defineStore('api', {
 
     async fetchSceneriesData() {
       try {
-        const response = (await http.get<API.Sceneries.Response | undefined>('api/getSceneries'))
-          .data;
+        const response = await fetch(`${this.baseURL}/api/getSceneries`);
+        const responseData: API.Sceneries.Response = await response.json();
 
         this.dataStatuses.stationData = DataStatus.LOADED;
-        this.stationData = response;
+        this.stationData = responseData;
       } catch (error) {
         this.dataStatuses.stationData = DataStatus.ERROR;
 

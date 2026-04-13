@@ -1,17 +1,30 @@
 <template>
   <div class="pragotron">
     <div class="pragotron_content">
+      <div class="pragotron_options">
+        <div v-click-outside="() => (isFiltersDropdownOpen = false)">
+          <button class="options-btn" @click="isFiltersDropdownOpen = !isFiltersDropdownOpen">
+            <img src="/icon-options.svg" width="20" alt="" />
+            {{ $t('options.btn-title') }}
+          </button>
+
+          <transition name="filters-anim">
+            <filters-dropdown @stationChanged="selectStation()" v-if="isFiltersDropdownOpen" />
+          </transition>
+        </div>
+      </div>
+
       <div class="wrapper" ref="pragotron">
         <div class="top-pane">
           <span class="title">
             <div>{{ mainStore.selectedCheckpointName.toUpperCase() }}</div>
           </span>
           <div class="headers">
-            <span>GODZ.</span>
-            <span>POCIĄG</span>
-            <span>PRZEZ</span>
-            <span>DO STACJI</span>
-            <span>OPÓŹNIONY</span>
+            <span>{{ $t('pragotron.header-1') }}</span>
+            <span>{{ $t('pragotron.header-2') }}</span>
+            <span>{{ $t('pragotron.header-3') }}</span>
+            <span>{{ $t('pragotron.header-4') }}</span>
+            <span>{{ $t('pragotron.header-5') }}</span>
           </div>
         </div>
         <div class="table">
@@ -85,9 +98,10 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import { ITableRow, RowIndex } from '../types/ITableRow';
 import { useMainStore } from '../stores/mainStore';
 import { useApiStore } from '../stores/apiStore';
+import { RowIndex, type ITableRow } from '../typings/common';
+import FiltersDropdown from '../components/FiltersDropdown.vue';
 
 const departureInfoEmptyObj: ITableRow = {
   timetableId: -1,
@@ -117,6 +131,8 @@ const departureInfoEmptyObj: ITableRow = {
 };
 
 export default defineComponent({
+  components: { FiltersDropdown },
+
   props: {
     stationName: {
       type: String,
@@ -136,12 +152,16 @@ export default defineComponent({
     includeNonPassenger: true,
     includeArrivals: true,
 
+    isFiltersDropdownOpen: false,
+
     isAnimationRunning: true,
     lastRefreshTime: 0,
 
     animatingStatus: 'init' as 'init' | 'running' | 'complete',
 
-    departureTable: new Array(7).fill(0).map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
+    departureTable: Array.from({ length: 7 })
+      .fill(0)
+      .map(() => ({ ...departureInfoEmptyObj })) as ITableRow[],
     departureRoutes: [''],
     dateDigits: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', ''],
     trainNumbersSet: new Set<string>(['']),
@@ -152,18 +172,8 @@ export default defineComponent({
     currentRowAnimating: 0
   }),
 
-  async created() {
-    // this.selectDefaultCheckpoint();
-
-    window.addEventListener('resize', () => {
-      this.resizeTable();
-    });
-  },
-
   activated() {
     this.mainStore.selectedStationName = this.stationName;
-
-    this.resizeTable();
 
     this.selectDefaultCheckpoint();
     this.shuffleRoutes();
@@ -229,6 +239,13 @@ export default defineComponent({
       else {
         (this.$refs['audio'] as HTMLAudioElement).currentTime = 0;
         (this.$refs['audio'] as HTMLAudioElement).pause();
+      }
+    },
+
+    'mainStore.filters': {
+      deep: true,
+      handler: function (val) {
+        window.localStorage.setItem('settings', JSON.stringify(val));
       }
     },
 
@@ -308,7 +325,6 @@ export default defineComponent({
           if (!this.departureRoutes.includes(routeVia)) this.departureRoutes.push(routeVia);
           if (!this.departureRoutes.includes(routeTo)) this.departureRoutes.push(routeTo);
 
-
           this.trainNumbersSet.add(`${timetable.category} ${train.trainNo}`);
 
           return list;
@@ -325,22 +341,23 @@ export default defineComponent({
   },
 
   methods: {
-    resizeTable() {
-      const elRef = this.$refs['pragotron'] as HTMLElement;
-      if (!elRef) return;
-
-      const scale = Math.min(
-        window.innerWidth / elRef.clientWidth,
-        window.innerHeight / elRef.clientHeight,
-        1
-      );
-
-      elRef.style.transform = `scale(${scale})`;
-    },
-
     selectDefaultCheckpoint() {
       this.mainStore.selectedCheckpointName =
         this.mainStore.selectedStation?.stationCheckpoints[0] || this.stationName;
+    },
+
+    selectStation() {
+      console.log('xd');
+      this.$router.push({
+        path: '/board',
+        query: {
+          name: this.mainStore.selectedStationName,
+          region: this.mainStore.region
+        }
+      });
+
+      this.selectDefaultCheckpoint();
+      this.shuffleRoutes();
     },
 
     abbrevStationName(name: string) {
@@ -398,10 +415,13 @@ export default defineComponent({
         });
 
         if (dep.trainNumber != dep.tableValues.trainNumber) {
-          dep.tableValues.trainNumber = Array.from(this.trainNumbersSet)[dep.tableValues.currentRowIndexes[RowIndex.TrainNumber]]
+          dep.tableValues.trainNumber = Array.from(this.trainNumbersSet)[
+            dep.tableValues.currentRowIndexes[RowIndex.TrainNumber]
+          ];
 
           dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] =
-            (dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] + 1) % this.trainNumbersSet.size;
+            (dep.tableValues.currentRowIndexes[RowIndex.TrainNumber] + 1) %
+            this.trainNumbersSet.size;
 
           isCurrentTickAnimating = true;
         }
@@ -444,36 +464,83 @@ export default defineComponent({
   }
 }
 
+.filters-anim {
+  &-enter-active,
+  &-leave-active {
+    transition: all 100ms ease-in-out;
+  }
+
+  &-enter-from,
+  &-leave-to {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+}
+
 /* ************** */
 
-.pragotron_content {
+.pragotron {
   display: flex;
   justify-content: center;
   padding: 1em;
 }
 
+.pragotron_options {
+  position: relative;
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.options-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.25em;
+  font-weight: bold;
+  padding: 0.25em 0.5em;
+  border-radius: 0.5em 0.5em 0 0;
+}
+
+.pragotron_content {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-direction: column;
+
+  width: 100%;
+  max-width: 1500px;
+}
+
 .wrapper {
   display: flex;
   flex-direction: column;
-  min-width: 1400px;
-  min-height: 700px;
-  padding: 2em;
 
-  transform-origin: top;
+  width: 100%;
+  min-height: 50em;
+  overflow: auto;
+
+  @media only screen and (max-width: 1500px) {
+    font-size: calc(0.3em + 0.65vw);
+  }
+
+  @media only screen and (max-width: 800px) {
+    font-size: 8px;
+  }
 }
 
 .top-pane > .headers,
 .row-content {
   display: grid;
   grid-template-columns: 1fr 1fr 2fr 2fr 1fr;
-  gap: 0 10px;
-  padding: 0 10px;
+  gap: 0 1em;
+  padding: 0 1em;
 }
 
 .top-pane {
   background-color: white;
   color: black;
-  height: 180px;
+  height: 12em;
+  min-width: 700px;
 
   display: flex;
   flex-direction: column;
@@ -481,24 +548,24 @@ export default defineComponent({
 
   .title {
     padding: 0;
-
     font-size: 3.5em;
   }
 
   .headers {
     text-align: center;
-
     font-size: 1.35em;
   }
 }
 
 .table {
-  background: white;
   flex-grow: 1;
 
   display: grid;
   grid-template-rows: repeat(7, 1fr);
   gap: 5px 0;
+
+  background: white;
+  min-width: 700px;
 }
 
 .row {
@@ -519,10 +586,10 @@ export default defineComponent({
 }
 
 .departure-date {
-  background: black;
+  background: #010101;
 
   span {
-    background: black;
+    background: #010101;
     height: 2em;
     line-height: 2em;
     flex-grow: 2;

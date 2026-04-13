@@ -1,6 +1,9 @@
 import { defineStore } from 'pinia';
-import ISceneryData from '../types/ISceneryData';
 import { useApiStore } from './apiStore';
+import type ISceneryData from '../typings/common';
+import i18n from '../i18n';
+
+export type AppLocale = 'pl' | 'en';
 
 export enum Region {
   PL1 = 'eu',
@@ -30,8 +33,17 @@ export const useMainStore = defineStore('main', {
         soundsEnabled: false
       },
       selectedStationName: '',
-      selectedCheckpointName: ''
+      selectedCheckpointName: '',
+      locale: 'pl' as AppLocale
     };
+  },
+
+  actions: {
+    changeLocale(locale: AppLocale) {
+      this.locale = locale;
+      window.localStorage.setItem('language', locale);
+      i18n.global.locale.value = locale;
+    }
   },
 
   getters: {

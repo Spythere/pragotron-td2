@@ -1,12 +1,17 @@
 <template>
   <nav class="navbar">
     <div class="navbar-body">
-      <router-link class="brand" to="/">
-        Pragotron TD2 <span class="text--accent">v{{ version }}</span> <sup>by Spythere</sup>
+      <router-link class="brand-link" to="/">
+        <span>Pragotron TD2</span>
+        <span class="text--accent"> v{{ version }}</span>
+        <sup> by Spythere</sup>
       </router-link>
 
-      <div class="options">
-        <Dropdown />
+      <div class="lang-switcher">
+        <button @click="switchLanguage">
+          <img src="/icon-globe.svg" alt="globe icon" />
+          {{ store.locale.toUpperCase() == 'PL' ? 'POL' : 'ENG' }}
+        </button>
       </div>
     </div>
   </nav>
@@ -15,10 +20,8 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 import { useMainStore } from '../stores/mainStore';
-import Dropdown from './Dropdown.vue';
 
 export default defineComponent({
-  components: { Dropdown },
   props: {
     version: String
   },
@@ -26,21 +29,21 @@ export default defineComponent({
     return {
       store: useMainStore()
     };
+  },
+  methods: {
+    switchLanguage() {
+      this.store.changeLocale(this.store.locale == 'pl' ? 'en' : 'pl');
+    }
   }
 });
 </script>
 
 <style lang="scss" scoped>
-@import '../styles.scss';
+@use '@/styles/theme';
 
 nav.navbar {
-  background-color: $accentBg;
+  background-color: theme.$accentBg;
   padding: 0 0.5em;
-
-  sup {
-    font-size: 0.8em;
-    color: $dimmedText;
-  }
 }
 
 .navbar-body {
@@ -53,10 +56,33 @@ nav.navbar {
   position: relative;
 
   margin: 0 auto;
-  max-width: 1400px;
+  max-width: 1500px;
+
+  font-weight: bold;
 }
 
-.brand {
+.brand-link {
   font-size: 1.25em;
+
+  sup {
+    font-size: 0.6em;
+    color: theme.$dimmedText;
+  }
+}
+
+.lang-switcher button {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+
+  padding: 0.25em 0.5em;
+  border-radius: 0.5em;
+  color: white;
+
+  font-size: 1em;
+
+  img {
+    width: 1.25em;
+  }
 }
 </style>
